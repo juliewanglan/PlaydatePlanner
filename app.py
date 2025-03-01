@@ -57,7 +57,7 @@ def main():
     # Extract relevant information
     user = data.get("user_name", "Unknown")
     message = data.get("text", "")
-    sess_id = "PLAYDATE PLANNER"
+    sess_id = "PLAYDATE PLANNER-testing"
 
     print(data)
 
