@@ -77,8 +77,8 @@ def main():
         f"User input is provided between triple asterisks: ***{message}***.\n\n"
         f"Examine the input carefully. If any of the details are missing, ask the user a follow-up question to obtain that specific missing information. "
         f"Ask one question at a time and in a friendly manner. "
-        f"Once you have all the necessary details, generate a summary which starts with "
-        "the phrase 'All necessary details completed:."
+        f"Once you have all the necessary details, output the phrase 'All necessary details completed:' "
+        "followed by a summary of all the details "
     )
     system = (
         "Answer as a friendly helper called PlaydatePlanner. "
@@ -100,6 +100,7 @@ def main():
     response_text = response['response']
 
     if "All necessary details completed" in response_text:
+        print("ALL NECESSARY DETAILS")
         activity = agent_activity(response_text)
         location = agent_location(response_text)
 
