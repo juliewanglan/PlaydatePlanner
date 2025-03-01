@@ -99,7 +99,7 @@ def main():
         system=system,
         query= query,
         temperature=0.0,
-        lastk=11,
+        lastk=50,
         session_id=sess_id
     )
 
