@@ -111,7 +111,7 @@ def main():
             "apiKey":os.environ.get("geoapifyApiKey")
         }
 
-        url = f"https://api.geoapify.com/v2/places?categories={params['category']}&bias={params['bias']}&limit=10&apiKey={params['apiKey']}"
+        url = f"https://api.geoapify.com/v2/places?categories={params['category']}&filter=circle:-0.07071648508463113,51.50848194136378,1000&bias={params['bias']}&limit=10&apiKey={params['apiKey']}"
         api_result = requests.get(url)
         print(url)
         if api_result.status_code == 200:
@@ -125,7 +125,7 @@ def main():
             query = f"Format the results of this api call nicely: {api_result.json()}",
             temperature=0.3,
             lastk=10,
-            session_id='playDatePlanner_agent_location',
+            session_id='playdateplanner-json',
         )
         response_text = response['response']
 
