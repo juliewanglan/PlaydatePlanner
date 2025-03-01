@@ -77,7 +77,8 @@ def main():
         f"User input is provided between triple asterisks: ***{message}***.\n\n"
         f"Examine the input carefully. If any of the details are missing, ask the user a follow-up question to obtain that specific missing information. "
         f"Ask one question at a time and in a friendly manner. "
-        f"Once all the required details are provided, generate a complete hangout plan including a suggested date, time, activity, and location."
+        f"Once you have all the necessary details, generate a summary which starts with "
+        "the phrase 'All necessary details completed:."
     )
     system = (
         "Answer as a friendly helper called PlaydatePlanner. "
@@ -114,6 +115,7 @@ def main():
     
 #bias=proximity:lon,lat
 def agent_location(query):
+    print('IN LOCATION AGENT')
     query_edited = (
         f"Extract the location of the user input and convert it to longitutde and latitiude.\n\n"
         f"User input is provided between triple asterisks: ***{query}***.\n\n"
@@ -140,6 +142,7 @@ def agent_location(query):
     return 
 
 def agent_activity(message):
+    print('IN ACTIVITY AGENT')
     query = (
         f'''
         This is what the user wants in a plan: {message}.
