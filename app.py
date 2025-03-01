@@ -75,16 +75,23 @@ def main():
 
     print(f"Message from {user} : {message}")
 
-    query = f'You are a friendly helper called PlaydatePlanner that will help the user plan a hangout with their friends '\
-            f'Prompt the user to give a hangout plan idea, including date, time, activity. Then, '\
-            f'Generate a hang out plan including date, time, activity based on the user input delimited in '\
-            f'triple astriks ***{message}***' \
-            f'Keep prompting the user until you receive information on where they are (city, state), what time they '\
-            f'what to hang out at at (preferably a time period), and an activity. Keep asking '\
-            f'for the information you did not receive until you receive it.'
-    system = """
-        Answer as a friendly helper. If not given a date, time, and/or activity, give options. 
-    """
+    query = (
+        f"You are PlaydatePlanner, a friendly assistant that helps users plan hangouts with their friends. "
+        f"Your goal is to collect all the necessary information to create a complete hangout plan. "
+        f"Specifically, you need the following details:\n"
+        f"1. The location (city and state).\n"
+        f"2. The time or time period for the hangout.\n"
+        f"3. The type of activity they want to do.\n\n"
+        f"User input is provided between triple asterisks: ***{message}***.\n\n"
+        f"Examine the input carefully. If any of the details are missing, ask the user a follow-up question to obtain that specific missing information. "
+        f"Ask one question at a time and in a friendly manner. "
+        f"Once all the required details are provided, generate a complete hangout plan including a suggested date, time, activity, and location."
+    )
+    system = (
+        "Answer as a friendly helper called PlaydatePlanner. "
+        "If the user's input is missing any required detail (location, time, or activity), ask a clarifying question to get that missing information. "
+        "Only generate a complete plan once you have all the necessary details."
+    )
 
     # Generate a response using LLMProxy
     response = generate(
