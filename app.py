@@ -104,6 +104,24 @@ def main():
         activity = agent_activity(response_text)
         location = agent_location(response_text)
 
+        params = {
+            "category": activity,
+            "bias":'proximity:' + location,
+            "limit":10,
+            "apiKey":os.environ.get("geoapifyApiKey")
+        }
+
+        url = f"https://api.geoapify.com/v2/places?categories={params['category']}&bias={params['bias']}&limit=10&apiKey={params['apiKey']}"
+
+        response = generate(model = '4o-mini',
+            system = 'Give human readable text',
+            query = f"Format the results of this api call nicely: {url}",
+            temperature=0.3,
+            lastk=10,
+            session_id='playDatePlanner_agent_location',
+        )
+        response_text = response['response']
+    
     # feed response to location agent and activity agent
     # agents parse thru the info to get the zipcode and activity
 
