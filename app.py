@@ -106,12 +106,12 @@ def main():
 
         params = {
             "category": activity,
-            "bias":'proximity:' + location,
+            "bias": location,
             "limit":10,
             "apiKey":os.environ.get("geoapifyApiKey")
         }
 
-        url = f"https://api.geoapify.com/v2/places?categories={params['category']}&filter=circle:-0.07071648508463113,51.50848194136378,1000&bias={params['bias']}&limit=10&apiKey={params['apiKey']}"
+        url = f"https://api.geoapify.com/v2/places?categories={params['category']}&filter=circle:{params['bias']},1000&limit=10&apiKey={params['apiKey']}"
         api_result = requests.get(url)
         print(url)
         if api_result.status_code == 200:
