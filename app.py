@@ -16,14 +16,6 @@ HEADERS = {
     "X-User-Id": os.environ.get("RC_userId") #Replace with your bot user id for local testing or keep it and store secrets in Koyeb
 }
 
-def activity_extraction_agent(message):
-    '''Extract the type of activity from the user query'''
-    query = (
-        '''
-        Extract any information on the type of activity the user wants from the prompt.
-        T
-        '''
-    )
 
 def send_message_with_buttons(username, text):
     """Send a message with Yes/No buttons for plan confirmation."""
@@ -80,7 +72,7 @@ def main():
         f"Your goal is to collect all the necessary information to create a complete hangout plan. "
         f"Specifically, you need the following details:\n"
         f"1. The location (city and state).\n"
-        f"2. The time or time period for the hangout.\n"
+        f"2. The times or time periods for the hangout.\n"
         f"3. The type of activity they want to do.\n\n"
         f"User input is provided between triple asterisks: ***{message}***.\n\n"
         f"Examine the input carefully. If any of the details are missing, ask the user a follow-up question to obtain that specific missing information. "
@@ -90,7 +82,8 @@ def main():
     system = (
         "Answer as a friendly helper called PlaydatePlanner. "
         "If the user's input is missing any required detail (location, time, or activity), ask a clarifying question to get that missing information. "
-        "Only generate a complete plan once you have all the necessary details."
+        "Once you have all the necessary details, generate a summary which starts with "
+        "the phrase 'All necessary details completed:"
     )
 
     # Generate a response using LLMProxy
@@ -105,8 +98,12 @@ def main():
 
     response_text = response['response']
 
+    if "All necessary details completed" in response_text:
+        activity = agent_activity(response_text)
+        location = agent_location(response_text)
+
     # feed response to location agent and activity agent
-    # agents parse thru the info to get the zipcode and activi
+    # agents parse thru the info to get the zipcode and activity
 
     # rocketchat_response = send_message_with_buttons(user, response_text)
     
@@ -115,17 +112,23 @@ def main():
 
     return jsonify({"text": response_text})
     
-def agent_location(query, sess_id):
-    system = """
-    Goal is to return the zipcode of the given location.
+#bias=proximity:lon,lat
+def agent_location(query):
+    query_edited = (
+        f"Extract the location of the user input and convert it to longitutde and latitiude.\n\n"
+        f"User input is provided between triple asterisks: ***{query}***.\n\n"
+    )
+    system = """ 
+        Extract the latitude and longitude of the given location in the format
+        lon,lat. Only include this. Exclude all other information.
     """
 
     response = generate(model = '4o-mini',
         system = system,
-        query = query,
+        query = query_edited,
         temperature=0.3,
         lastk=10,
-        session_id=sess_id,
+        session_id='playDatePlanner_agent_location',
     )
 
     try:
@@ -136,6 +139,65 @@ def agent_location(query, sess_id):
         raise e
     return 
 
+def agent_activity(message):
+    query = (
+        f'''
+        This is what the user wants in a plan: {message}.
+        Based off this message, respond with the closest activity.
+        Only respond with the category from the following mapping (and nothing else):
+            "restaurant": "catering.restaurant",
+            "dining": "catering.restaurant",
+            "food": "catering.restaurant",
+            "pakistani": "catering.restaurant",
+            "italian": "catering.restaurant",
+            "chinese": "catering.restaurant",
+            "mexican": "catering.restaurant",
+            "japanese": "catering.restaurant",
+            "american": "catering.restaurant",
+            "burger": "catering.restaurant",
+            "cafe": "catering.cafe",
+            "coffee": "catering.cafe",
+            "bar": "catering.pub",
+            "pub": "catering.pub",
+            "fast food": "catering.fast_food",
+            
+            "park": "leisure.park",
+            "picnic": "leisure.picnic",
+            "museum": "entertainment.museum",
+            "cinema": "entertainment.cinema",
+            "movie": "entertainment.cinema",
+            "theatre": "entertainment.culture",
+            "theater": "entertainment.culture",
+            "nightclub": "adult.nightclub",
+            "club": "adult.nightclub",
+            "concert": "entertainment.culture",
+            "live music": "entertainment.culture",
+            
+            "shopping": "commercial.shopping_mall",
+            "mall": "commercial.shopping_mall",
+            "market": "commercial.marketplace",
+            
+            "hiking": "leisure.hiking",
+            "gym": "sport.fitness",
+            "fitness": "sport.fitness",
+            "spa": "leisure.spa"
+            
+        Respond with only the category value, for example: catering.restaurant
+        '''
+    )
+    response = generate(
+        model='4o-mini',
+        system="Extract the appropriate category based on the user's request. Respond only with the category.",
+        query=query,
+        temperature=0.0,
+        lastk=10,
+        session_id="AGENT-ACTIVITY"
+    )
+    
+    # Extract the category from the LLM response.
+    category = response.get('response', '').strip()
+    print("Determined activity category:", category)
+    return category
 
 @app.route('/interaction', methods=['POST'])
 def handle_interaction():
