@@ -65,7 +65,7 @@ def main():
     # Extract relevant information
     user = data.get("user_name", "Unknown")
     message = data.get("text", "")
-    sess_id = f"playdatePlanner-{user}-{uuid.uuid4().hex[:8]}"
+    sess_id = "PLAYDATE PLANNER"
 
     print(data)
 
@@ -84,7 +84,6 @@ def main():
             f'for the information you did not receive until you receive it.'
     system = """
         Answer as a friendly helper. If not given a date, time, and/or activity, give options. 
-        Keep prompting the user until all information is received.
     """
 
     # Generate a response using LLMProxy
