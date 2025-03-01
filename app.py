@@ -113,6 +113,7 @@ def main():
 
         url = f"https://api.geoapify.com/v2/places?categories={params['category']}&bias={params['bias']}&limit=10&apiKey={params['apiKey']}"
         api_result = requests.get(url)
+        print(url)
         if api_result.status_code == 200:
             data_api = api_result.json()
             print("Geoapify API response:", data_api)
