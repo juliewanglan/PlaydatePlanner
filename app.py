@@ -112,15 +112,23 @@ def main():
         }
 
         url = f"https://api.geoapify.com/v2/places?categories={params['category']}&bias={params['bias']}&limit=10&apiKey={params['apiKey']}"
+        api_result = requests.get(url)
+        if api_result.status_code == 200:
+            data_api = api_result.json()
+            print("Geoapify API response:", data_api)
+        else:
+            print("Error calling Geoapify API:", data_api.text)
 
         response = generate(model = '4o-mini',
             system = 'Give human readable text',
-            query = f"Format the results of this api call nicely: {url}",
+            query = f"Format the results of this api call nicely: {api_result.json()}",
             temperature=0.3,
             lastk=10,
             session_id='playDatePlanner_agent_location',
         )
         response_text = response['response']
+
+        #rocketchat_response = send_message_with_buttons(user, response_text)
     
     # feed response to location agent and activity agent
     # agents parse thru the info to get the zipcode and activity
