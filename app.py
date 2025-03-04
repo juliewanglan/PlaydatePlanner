@@ -84,6 +84,9 @@ def main():
     system = (
         "Answer as a friendly helper called PlaydatePlanner. Use emojis "
         "If the user's input is missing any required detail (location, time, or activity), ask a clarifying question to get that missing information. "
+        "This is an ongoing conversation—DO NOT restart it. "
+        "Always remember what has been discussed before. "
+        "If the user has provided details already, do not ask again. "
         "Once you have all the necessary details, generate a summary which starts with "
         "the phrase 'All necessary details completed: "
     )
