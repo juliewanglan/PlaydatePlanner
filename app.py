@@ -257,26 +257,34 @@ def agent_activity(message):
     
     query = (
         f'''
-        This is what the user wants in a plan: {message}.
-        Based off this message and the uploaded document, respond with the closest activity.
-        Go through both the message and the uploaded document.
-        Or, match their descripton with the closest activity.
-        Only respond with the category from the document (and nothing else):
-        Respond with only the category value, for example: catering.restaurant
+        The user provided the following request: ***{message}***.
+        
+        Based on this request and the uploaded document, find the closest matching activity category.
+        
+        The category **must** be explicitly listed in the document. 
 
-        Make sure the name of the category matches exacrly with the uploaded document.
+        Respond **only** with the exact category name from the document. Do not add any extra text. 
+        Example output: `catering.restaurant`
         '''
     )
+
+    system_prompt = """
+        You are an assistant that extracts the closest matching category from the uploaded document.
+        - The category **must** be listed in the document.
+        - Do not infer or create new categories.
+        - Respond with only the category name, exactly as it appears in the document.
+    """
+
     response = generate(
         model='4o-mini',
-        system="Extract the appropriate category based on the user's request. Respond only with the category. Make sure the category is explicitly listed in the document",
+        system=system_prompt,
         query=query,
         temperature=0.0,
         lastk=1,
         session_id="activity_agent",
         rag_usage=True,
-        rag_threshold='0.95',
-        rag_k=1
+        rag_threshold='0.90',
+        rag_k=3
     )
     
     # Extract the category from the LLM response.
