@@ -5,17 +5,11 @@ from llmproxy import generate, pdf_upload
 import os
 import uuid
 
-
-
 app = Flask(__name__)
 session_id = "3playdatePlanner-"
 
-app.config['SESSION_TYPE'] = 'filesystem'  # You can change this to 'redis' or another backend for persistence
-app.config['SECRET_KEY'] = os.urandom(24)
-Session(app)
-
-
 # Rocket.Chat API endpoint
+API_BASE_URL = "https://chat.genaiconnect.net/api/v1"
 ROCKETCHAT_URL = "https://chat.genaiconnect.net/api/v1/chat.postMessage"  # Keep the same URL
 
 # Headers with authentication tokens stored securely in environment variables
@@ -76,18 +70,43 @@ def ask_for_friend_username(username):
         response.raise_for_status()
         print(f"Asked {username} for their friend's username.")
 
-        # Set the user's state using Flask session
-        session[username] = "waiting_for_friend_username"
-        print("ask_forfriend: STATES:", session)
-
-        # Set the user's state using Flask session
-        session[username] = "waiting_for_friend_username"
-        print("ask_forfriend: STATES:", session)
-
         return response.json()
     except Exception as e:
         print(f"An error occurred while asking for friend's username: {e}")
         return {"error": f"Error: {e}"}
+    
+def is_valid_username(username):
+    """
+    Check if a username exists by calling Rocket.Chat's /users.info API.
+    """
+    url = f"{API_BASE_URL}/users.info?username={username}"
+    try:
+        response = requests.get(url, headers=HEADERS)
+        data = response.json()
+        if response.status_code == 200 and data.get("user"):
+            return True
+        return False
+    except Exception as e:
+        print("Error validating username:", e)
+        return False
+
+def send_plan_to_friend(friend_username, plan_text):
+    """
+    Send the plan message to the friend.
+    """
+    payload = {
+        "channel": f"@{friend_username}",
+        "text": plan_text
+    }
+    try:
+        response = requests.post(f"{ROCKETCHAT_URL}", json=payload, headers=HEADERS)
+        response.raise_for_status()
+        print(f"Plan sent successfully to {friend_username}.")
+        return response.json()
+    except Exception as e:
+        print(f"Error sending plan to {friend_username}: {e}")
+        return {"error": str(e)}
+
 
 @app.route('/', methods=['POST'])
 def hello_world():
@@ -110,26 +129,19 @@ def main():
 
     print(f"Message from {user} : {message}")
 
-    print("2. THIS IS USER STATES:", session)
-    if user in session:
-        friend_username = message.strip()
-        print(f"Friend's username provided by {user}: {friend_username}")
-
-        # Remove state
-        session.pop(user, None)
-
-        # Send message
-        payload = {
-            "channel": f"@{friend_username}",
-            "text": f"HIHI MESSAGE!!"
-        }
-        requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-
-        # Optionally, send the plan to the friend here
-        # (You can reuse the logic from earlier to send the plan)
-        print("3. THIS IS USER STATES:", session)
-
-        return jsonify({"status": "friend_username_saved", "friend_username": friend_username})
+    if len(message.split()) == 1:
+        if is_valid_username(message):
+            plan_text = "HIHI MESSAGE!!"  # Replace with your actual plan message
+            send_plan_to_friend(message, plan_text)
+            return jsonify({"status": "plan_sent", "friend_username": message})
+        else:
+            # Optionally, you might want to send an error back to the user.
+            error_payload = {
+                "channel": f"@{user}",
+                "text": f"'{message}' is not a valid username. Please try again."
+            }
+            requests.post(f"{ROCKETCHAT_URL}/chat.postMessage", json=error_payload, headers=HEADERS)
+            return jsonify({"status": "invalid_username"})
 
 
     # Check if the message is a confirmation response
@@ -267,11 +279,8 @@ def agent_activity(message):
     query = (
         f'''
         The user provided the following request: ***{message}***.
-        
         Based on this request and the uploaded document, find the closest matching activity category.
-        
         The category **must** be explicitly listed in the document. 
-
         Respond **only** with the exact category name from the document. Do not add any extra text. 
         Example output: `catering.restaurant`
         '''
