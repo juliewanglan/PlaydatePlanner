@@ -70,6 +70,7 @@ def ask_for_friend_username(username):
 
         # Set the user's state to "waiting_for_friend_username"
         user_states[username] = "waiting_for_friend_username"
+        print("USER STATES:" + user_states)
 
         return response.json()
     except Exception as e:
@@ -97,7 +98,8 @@ def main():
 
     print(f"Message from {user} : {message}")
 
-    if user in user_states and user_states[user] == "waiting_for_friend_username":
+    print("THIS IS USER STATES:" + user_states)
+    if user_states[user] == "waiting_for_friend_username":
         # Save the friend's username
         friend_username = message.strip()
         print(f"Friend's username provided by {user}: {friend_username}")
@@ -271,7 +273,7 @@ def agent_activity(message):
     system_prompt = """
         You are an assistant that extracts the closest matching category from the uploaded document.
         - The category **must** be listed in the document.
-        - Do not infer or create new categories.
+        - Do not infer or create new categories. Paste the exact category name from the document.
         - Respond with only the category name, exactly as it appears in the document.
     """
 
