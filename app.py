@@ -188,14 +188,16 @@ def agent_location(query):
 def agent_activity(message):
     print('IN ACTIVITY AGENT')
 
-    csgrad_handbook_pdf = pdf_upload(
+    categories_pdf = pdf_upload(
         path = 'categories.pdf',
         session_id='activity_agent',
         strategy = 'smart')
+    
     query = (
         f'''
         This is what the user wants in a plan: {message}.
         Based off this message and the uploaded document, respond with the closest activity.
+        Go through both the message nad the uploaded document
         Or, match their descripton with the closest activity.
         Only respond with the category from the following mapping or a category in the document (and nothing else):
             "restaurant": "catering.restaurant",
@@ -235,7 +237,10 @@ def agent_activity(message):
         query=query,
         temperature=0.0,
         lastk=1,
-        session_id="activity_agent"
+        session_id="activity_agent",
+        rag_usage=True,
+        rag_threshold='0.6',
+        rag_k=1
     )
     
     # Extract the category from the LLM response.
