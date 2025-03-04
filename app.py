@@ -99,7 +99,7 @@ def main():
     print(f"Message from {user} : {message}")
 
     print("THIS IS USER STATES:", user_states)
-    if user_states[user] == "waiting_for_friend_username":
+    if user in user_states and user_states[user] == "waiting_for_friend_username":
         # Save the friend's username
         friend_username = message.strip()
         print(f"Friend's username provided by {user}: {friend_username}")
