@@ -129,7 +129,8 @@ def main():
 
     print(f"Message from {user} : {message}")
 
-    print(len(message.split()) == 1)
+    print("message length", len(message.split()) == 1)
+    print(message.split())
     if (len(message.split()) == 1) and is_valid_username(message.split()):
         print("MESSAGE LENGTH IS 1")
         if is_valid_username(message.split()):
