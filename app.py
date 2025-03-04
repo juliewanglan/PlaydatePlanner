@@ -119,7 +119,7 @@ def main():
                 data_api = api_result.json()
                 print("Geoapify API response:", data_api)
             else:
-                print("Error calling Geoapify API:", data_api.text)
+                print("Error calling Geoapify API")
 
             response = generate(model = '4o-mini',
                 system = 'Give human readable text',
