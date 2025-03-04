@@ -70,7 +70,7 @@ def ask_for_friend_username(username):
 
         # Set the user's state to "waiting_for_friend_username"
         user_states[username] = "waiting_for_friend_username"
-        print("USER STATES:" + user_states)
+        print("USER STATES:", user_states)
 
         return response.json()
     except Exception as e:
@@ -98,7 +98,7 @@ def main():
 
     print(f"Message from {user} : {message}")
 
-    print("THIS IS USER STATES:" + user_states)
+    print("THIS IS USER STATES:", user_states)
     if user_states[user] == "waiting_for_friend_username":
         # Save the friend's username
         friend_username = message.strip()
