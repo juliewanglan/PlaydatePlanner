@@ -5,7 +5,7 @@ import os
 import uuid
 
 app = Flask(__name__)
-session_id = "playdatePlanner-"
+session_id = "1playdatePlanner-"
 
 # Rocket.Chat API endpoint
 ROCKETCHAT_URL = "https://chat.genaiconnect.net/api/v1/chat.postMessage"  # Keep the same URL
@@ -82,11 +82,11 @@ def main():
         "followed by a summary of all the details "
     )
     system = (
-        "Answer as a friendly helper called PlaydatePlanner. "
+        "Answer as a friendly helper called PlaydatePlanner. Use emojis "
         "If the user's input is missing any required detail (location, time, or activity), ask a clarifying question to get that missing information. "
         "Once you have all the necessary details, generate a summary which starts with "
-        "the phrase 'All necessary details completed:"
-        "Be frinedly and use emojis."
+        "the phrase 'All necessary details completed: "
+        "There is no need to confirm"
     )
 
     # Generate a response using LLMProxy
@@ -132,6 +132,9 @@ def main():
             session_id='playdateplanner-json',
         )
         response_text = response['response']
+        print('LIST OF PLACES GENERATED')
+        print(response_text)
+        return jsonify({"text": response_text})
 
         #rocketchat_response = send_message_with_buttons(user, response_text)
     
