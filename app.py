@@ -55,7 +55,7 @@ def send_message_with_buttons(username, text):
         print(f"An unexpected error occurred while sending message to {username}: {e}")
         return {"error": f"Unexpected error: {e}"}
 
-
+user_states = {}
 def ask_for_friend_username(username):
     """Ask the user for their friend's username."""
     payload = {
@@ -67,6 +67,10 @@ def ask_for_friend_username(username):
         response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
         response.raise_for_status()
         print(f"Asked {username} for their friend's username.")
+
+        # Set the user's state to "waiting_for_friend_username"
+        user_states[username] = "waiting_for_friend_username"
+
         return response.json()
     except Exception as e:
         print(f"An error occurred while asking for friend's username: {e}")
@@ -92,6 +96,27 @@ def main():
         return jsonify({"status": "ignored"})
 
     print(f"Message from {user} : {message}")
+
+    if user in user_states and user_states[user] == "waiting_for_friend_username":
+        # Save the friend's username
+        friend_username = message.strip()
+        print(f"Friend's username provided by {user}: {friend_username}")
+
+        # Reset the user's state
+        user_states[user] = None
+
+        # Send a confirmation message
+        payload = {
+            "channel": f"@{user}",
+            "text": f"Got it! I'll send the plan to @{friend_username}."
+        }
+        requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+
+        # Optionally, send the plan to the friend here
+        # (You can reuse the logic from earlier to send the plan)
+
+        return jsonify({"status": "friend_username_saved", "friend_username": friend_username})
+
 
     # Check if the message is a confirmation response
     if message.startswith("!confirm"):
