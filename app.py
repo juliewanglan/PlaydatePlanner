@@ -5,7 +5,7 @@ import os
 import uuid
 
 app = Flask(__name__)
-session_id = "1playdatePlanner-"
+session_id = "2playdatePlanner-"
 
 # Rocket.Chat API endpoint
 ROCKETCHAT_URL = "https://chat.genaiconnect.net/api/v1/chat.postMessage"  # Keep the same URL
@@ -182,32 +182,22 @@ def agent_activity(message):
         f'''
         This is what the user wants in a plan: {message}.
         Based off this message, respond with the closest activity.
-        If the user gives a description, match it to the closest activity.
+        If the user is not sure, list out some categories from this list as an idea. 
+        Or, match their descripton with the closest activity.
         Only respond with the category from the following mapping (and nothing else):
             "restaurant": "catering.restaurant",
             "dining": "catering.restaurant",
             "food": "catering.restaurant",
-            "pakistani": "catering.restaurant",
-            "italian": "catering.restaurant",
-            "chinese": "catering.restaurant",
-            "mexican": "catering.restaurant",
-            "japanese": "catering.restaurant",
-            "american": "catering.restaurant",
-            "burger": "catering.restaurant",
             "cafe": "catering.cafe",
             "coffee": "catering.cafe",
             "bar": "catering.pub",
-            "pub": "catering.pub",
             "fast food": "catering.fast_food",
             
             "park": "leisure.park",
             "picnic": "leisure.picnic",
             "museum": "entertainment.museum",
-            "cinema": "entertainment.cinema",
             "movie": "entertainment.cinema",
-            "theatre": "entertainment.culture",
             "theater": "entertainment.culture",
-            "nightclub": "adult.nightclub",
             "club": "adult.nightclub",
             "concert": "entertainment.culture",
             "live music": "entertainment.culture",
