@@ -129,7 +129,6 @@ def main():
             query = f"Format the results of this api call nicely: {api_result.json()}",
             temperature=0.3,
             lastk=10,
-            session_id='playdateplanner-json',
         )
         response_text = response['response']
         print('LIST OF PLACES GENERATED')
@@ -165,7 +164,6 @@ def agent_location(query):
         query = query_edited,
         temperature=0.3,
         lastk=10,
-        session_id='playDatePlanner_agent_location',
     )
 
     try:
@@ -220,7 +218,6 @@ def agent_activity(message):
         query=query,
         temperature=0.0,
         lastk=10,
-        session_id="AGENT-ACTIVITY"
     )
     
     # Extract the category from the LLM response.
