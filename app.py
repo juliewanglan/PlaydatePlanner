@@ -145,12 +145,12 @@ def main():
             print(f"An error occurred: {e}")
             response_text = "An error occurred while processing your request. Please try again later."
 
-        #rocketchat_response = send_message_with_buttons(user, response_text)
+        rocketchat_response = send_message_with_buttons(user, response_text)
     
     # feed response to location agent and activity agent
     # agents parse thru the info to get the zipcode and activity
 
-    rocketchat_response = send_message_with_buttons(user, response_text)
+    # rocketchat_response = send_message_with_buttons(user, response_text)
     
     # Send response back
     print(response_text)
