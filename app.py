@@ -5,6 +5,7 @@ import os
 import uuid
 
 app = Flask(__name__)
+sess_id = "playdatePlanner-"
 
 # Rocket.Chat API endpoint
 ROCKETCHAT_URL = "https://chat.genaiconnect.net/api/v1/chat.postMessage"  # Keep the same URL
@@ -57,7 +58,7 @@ def main():
     # Extract relevant information
     user = data.get("user_name", "Unknown")
     message = data.get("text", "")
-    sess_id = "PLAYDATE PLANNER-testing"
+    sess_id = sess_id + user
 
     print(data)
 
@@ -85,6 +86,7 @@ def main():
         "If the user's input is missing any required detail (location, time, or activity), ask a clarifying question to get that missing information. "
         "Once you have all the necessary details, generate a summary which starts with "
         "the phrase 'All necessary details completed:"
+        "Be frinedly and use emojis."
     )
 
     # Generate a response using LLMProxy
@@ -175,6 +177,7 @@ def agent_activity(message):
         f'''
         This is what the user wants in a plan: {message}.
         Based off this message, respond with the closest activity.
+        If the user gives a description, match it to the closest activity.
         Only respond with the category from the following mapping (and nothing else):
             "restaurant": "catering.restaurant",
             "dining": "catering.restaurant",
