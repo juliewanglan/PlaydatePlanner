@@ -130,9 +130,9 @@ def main():
     print(f"Message from {user} : {message}")
 
     print(len(message.split()) == 1)
-    if len(message.split()) == 1:
+    if (len(message.split()) == 1) and is_valid_username(message.split()):
         print("MESSAGE LENGTH IS 1")
-        if is_valid_username(message):
+        if is_valid_username(message.split()):
             print("VALID USERNAME")
             plan_text = "HIHI MESSAGE!!"  # Replace with your actual plan message
             send_plan_to_friend(message, plan_text)
