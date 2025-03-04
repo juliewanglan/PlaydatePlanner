@@ -3,10 +3,17 @@ from flask import Flask, request, jsonify
 from llmproxy import generate, pdf_upload
 import os
 import uuid
+from flask import session
+from flask_session import Session
+
 
 app = Flask(__name__)
 session_id = "3playdatePlanner-"
-user_states = {}
+
+app.config['SESSION_TYPE'] = 'filesystem'  # You can change this to 'redis' or another backend for persistence
+app.config['SECRET_KEY'] = os.urandom(24)
+Session(app)
+
 
 # Rocket.Chat API endpoint
 ROCKETCHAT_URL = "https://chat.genaiconnect.net/api/v1/chat.postMessage"  # Keep the same URL
@@ -69,9 +76,13 @@ def ask_for_friend_username(username):
         response.raise_for_status()
         print(f"Asked {username} for their friend's username.")
 
-        # Set the user's state to "waiting_for_friend_username"
-        user_states[username] = "waiting_for_friend_username"
-        print("askforfriend: STATES:", user_states)
+        # Set the user's state using Flask session
+        session[username] = "waiting_for_friend_username"
+        print("ask_forfriend: STATES:", session)
+
+        # Set the user's state using Flask session
+        session[username] = "waiting_for_friend_username"
+        print("ask_forfriend: STATES:", session)
 
         return response.json()
     except Exception as e:
@@ -99,22 +110,16 @@ def main():
 
     print(f"Message from {user} : {message}")
 
-    print("2. THIS IS USER STATES:", user_states)
-    if user in user_states:
-        # Save the friend's username
+    print("2. THIS IS USER STATES:", session)
+    if user in session:
         friend_username = message.strip()
         print(f"Friend's username provided by {user}: {friend_username}")
 
-        # Reset the user's state
-        user_states.pop(user)
+        # Remove state
+        session.pop(user, None)
 
-        # Send a confirmation message
+        # Send message
         payload = {
-            "channel": f"@{user}",
-            "text": f"Got it! I'll send the plan to @{friend_username}."
-        }
-
-        payload={
             "channel": f"@{friend_username}",
             "text": f"HIHI MESSAGE!!"
         }
@@ -122,7 +127,7 @@ def main():
 
         # Optionally, send the plan to the friend here
         # (You can reuse the logic from earlier to send the plan)
-        print("3. THIS IS USER STATES:", user_states)
+        print("3. THIS IS USER STATES:", session)
 
         return jsonify({"status": "friend_username_saved", "friend_username": friend_username})
 
