@@ -25,7 +25,7 @@ def send_message_with_buttons(username, text):
         "text": text,
         "attachments": [
             {
-                "text": "Do you want to finalize this plan?",
+                "text": "Would you like to send these options to a friend?",
                 "actions": [
                     {
                         "type": "button",
@@ -55,6 +55,23 @@ def send_message_with_buttons(username, text):
         print(f"An unexpected error occurred while sending message to {username}: {e}")
         return {"error": f"Unexpected error: {e}"}
 
+
+def ask_for_friend_username(username):
+    """Ask the user for their friend's username."""
+    payload = {
+        "channel": f"@{username}",
+        "text": "Please enter your friend's username:"
+    }
+
+    try:
+        response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+        response.raise_for_status()
+        print(f"Asked {username} for their friend's username.")
+        return response.json()
+    except Exception as e:
+        print(f"An error occurred while asking for friend's username: {e}")
+        return {"error": f"Error: {e}"}
+
 @app.route('/', methods=['POST'])
 def hello_world():
    return jsonify({"text":'Hello from Koyeb - you reached the main page!'})
@@ -75,6 +92,21 @@ def main():
         return jsonify({"status": "ignored"})
 
     print(f"Message from {user} : {message}")
+
+    # Check if the message is a confirmation response
+    if message.startswith("!confirm"):
+        parts = message.split()
+        if len(parts) >= 3:
+            confirmed_user = parts[1]
+            confirmation = parts[2]
+
+            if confirmation == "yes":
+                # Ask for the friend's username
+                ask_for_friend_username(confirmed_user)
+                return jsonify({"status": "asked_for_friend_username"})
+            elif confirmation == "no":
+                return jsonify({"status": "confirmation_denied"})
+        return jsonify({"status": "invalid_confirmation"})
 
     query = (
         "You are PlaydatePlanner, a friendly assistant helping users plan a hangout. "
@@ -199,35 +231,7 @@ def agent_activity(message):
         Based off this message and the uploaded document, respond with the closest activity.
         Go through both the message nad the uploaded document
         Or, match their descripton with the closest activity.
-        Only respond with the category from the following mapping or a category in the document (and nothing else):
-            "restaurant": "catering.restaurant",
-            "cafe": "catering.cafe",
-            "bar": "catering.pub",
-            "fast food": "catering.fast_food",
-            
-            "park": "leisure.park",
-            "picnic": "leisure.picnic",
-            "museum": "entertainment.museum",
-            "movie": "entertainment.cinema",
-            "theater": "entertainment.culture",
-            "club": "adult.nightclub",
-            "concert": "entertainment.culture",
-            "live music": "entertainment.culture",
-            
-            "shopping": "commercial.shopping_mall",
-            "market": "commercial.marketplace",
-            
-            "sports": "commercial.outdoor_and_sport",
-            "hobby": "commercial.hobby",
-            "books": "commercial.books",
-            "flowers": "commercial.florist",
-            "toys and games": "commercial.toy_and_game",
-
-            "thrift": "commercial.second_hand",
-            "antiques": "commercial.antiques",
-            "culture": "entertainment.culture",
-            "arcade": "entertainment.amusement_arcade",
-            
+        Only respond with the category from the document (and nothing else):
         Respond with only the category value, for example: catering.restaurant
         '''
     )
@@ -239,7 +243,7 @@ def agent_activity(message):
         lastk=1,
         session_id="activity_agent",
         rag_usage=True,
-        rag_threshold='0.6',
+        rag_threshold='0.9',
         rag_k=1
     )
     
@@ -248,27 +252,6 @@ def agent_activity(message):
     print("Determined activity category:", category)
     return category
 
-@app.route('/interaction', methods=['POST'])
-def handle_interaction():
-    """Handle Rocket.Chat button clicks from users."""
-    data = request.get_json()
-    user = data.get("user_name", "Unknown")
-    message_text = data.get("text", "")
-
-    print(f"Interaction received from {user}: {message_text}")
-
-    if "!confirm" in message_text:
-        parts = message_text.split()
-        if len(parts) >= 3:
-            target_user = parts[1]
-            decision = parts[2]
-
-            update_text = f"🎉 {user} has finalized the plan! ✅" if decision == "yes" else f"❌ {user} has rejected the plan."
-
-            # Send confirmation message
-            send_message_with_buttons(target_user, update_text)
-
-    return jsonify({"status": "success"})
     
 @app.errorhandler(404)
 def page_not_found(e):
