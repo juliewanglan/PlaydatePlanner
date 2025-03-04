@@ -5,7 +5,7 @@ import os
 import uuid
 
 app = Flask(__name__)
-session_id = "2playdatePlanner-"
+session_id = "3playdatePlanner-"
 
 # Rocket.Chat API endpoint
 ROCKETCHAT_URL = "https://chat.genaiconnect.net/api/v1/chat.postMessage"  # Keep the same URL
@@ -77,8 +77,8 @@ def main():
         f"3. The type of activity they want to do.\n\n"
         f"User input is provided between triple asterisks: ***{message}***.\n\n"
         f"Examine the input carefully. If any of the details are missing, ask the user a follow-up question to obtain that specific missing information. "
-        f"Ask one question at a time and in a friendly manner. "
-        f"Once you have all the necessary details, output the phrase 'All necessary details completed:' "
+        # f"Ask one question at a time and in a friendly manner. "
+        "Once all details are gathered, say exactly: 'All necessary details completed:'"
         "followed by a summary of all the details "
     )
     system = (
@@ -86,7 +86,6 @@ def main():
         "If the user's input is missing any required detail (location, time, or activity), ask a clarifying question to get that missing information. "
         "Once you have all the necessary details, generate a summary which starts with "
         "the phrase 'All necessary details completed: "
-        "There is no need to confirm"
     )
 
     # Generate a response using LLMProxy
@@ -95,7 +94,7 @@ def main():
         system=system,
         query= query,
         temperature=0.0,
-        lastk=20,
+        lastk=100,
         session_id=sess_id
     )
 
@@ -128,7 +127,6 @@ def main():
             system = 'Give human readable text',
             query = f"Format the results of this api call nicely: {api_result.json()}",
             temperature=0.3,
-            lastk=10,
         )
         response_text = response['response']
         print('LIST OF PLACES GENERATED')
@@ -163,7 +161,6 @@ def agent_location(query):
         system = system,
         query = query_edited,
         temperature=0.3,
-        lastk=10,
     )
 
     try:
@@ -217,7 +214,6 @@ def agent_activity(message):
         system="Extract the appropriate category based on the user's request. Respond only with the category.",
         query=query,
         temperature=0.0,
-        lastk=10,
     )
     
     # Extract the category from the LLM response.
