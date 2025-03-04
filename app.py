@@ -6,6 +6,7 @@ import uuid
 
 app = Flask(__name__)
 session_id = "3playdatePlanner-"
+user_states = {}
 
 # Rocket.Chat API endpoint
 ROCKETCHAT_URL = "https://chat.genaiconnect.net/api/v1/chat.postMessage"  # Keep the same URL
@@ -55,7 +56,7 @@ def send_message_with_buttons(username, text):
         print(f"An unexpected error occurred while sending message to {username}: {e}")
         return {"error": f"Unexpected error: {e}"}
 
-user_states = {}
+
 def ask_for_friend_username(username):
     """Ask the user for their friend's username."""
     payload = {
@@ -99,13 +100,13 @@ def main():
     print(f"Message from {user} : {message}")
 
     print("THIS IS USER STATES:", user_states)
-    if user in user_states and user_states[user] == "waiting_for_friend_username":
+    if user in user_states:
         # Save the friend's username
         friend_username = message.strip()
         print(f"Friend's username provided by {user}: {friend_username}")
 
         # Reset the user's state
-        user_states[user] = None
+        user_states.pop(user)
 
         # Send a confirmation message
         payload = {
