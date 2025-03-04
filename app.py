@@ -69,26 +69,20 @@ def main():
     print(f"Message from {user} : {message}")
 
     query = (
-        f"You are PlaydatePlanner, a friendly assistant that helps users plan hangouts with their friends. "
-        f"Your goal is to collect all the necessary information to create a complete hangout plan. "
-        f"Specifically, you need the following details:\n"
-        f"1. The location (city and state).\n"
-        f"2. The times or time periods for the hangout.\n"
-        f"3. The type of activity they want to do.\n\n"
-        f"User input is provided between triple asterisks: ***{message}***.\n\n"
-        f"Examine the input carefully. If any of the details are missing, ask the user a follow-up question to obtain that specific missing information. "
-        # f"Ask one question at a time and in a friendly manner. "
-        "Once all details are gathered, say exactly: 'All necessary details completed:'"
-        "followed by a summary of all the details "
+        "You are PlaydatePlanner, a friendly assistant helping users plan a hangout. "
+        "Your goal is to gather three key details: location, time, and activity. "
+        "Only ask about missing details—do not ask again if the user has already provided something. "
+        "Once all details are collected, respond with exactly: 'All necessary details completed:' followed by a summary. "
+
+        f"This is the user's next message: {message}"
     )
     system = (
-        "Answer as a friendly helper called PlaydatePlanner. Use emojis "
-        "If the user's input is missing any required detail (location, time, or activity), ask a clarifying question to get that missing information. "
-        "This is an ongoing conversation—DO NOT restart it. "
-        "Always remember what has been discussed before. "
-        "If the user has provided details already, do not ask again. "
-        "Once you have all the necessary details, generate a summary which starts with "
-        "the phrase 'All necessary details completed: "
+        "You are PlaydatePlanner, a helpful and friendly assistant. 🎉 "
+        "This is an ongoing conversation—do NOT restart it. "
+        "Always remember what has already been discussed. "
+        "Ask clarifying questions only if required details (location, time, or activity) are missing. "
+        "If everything is provided, summarize the plan starting with: 'All necessary details completed:'. "
+        "Do NOT repeat questions unnecessarily."
     )
 
     # Generate a response using LLMProxy
@@ -107,33 +101,38 @@ def main():
 
     if "All necessary details completed" in response_text:
         print("ALL NECESSARY DETAILS")
-        activity = agent_activity(response_text)
-        location = agent_location(response_text)
+        try: 
+            activity = agent_activity(response_text)
+            location = agent_location(response_text)
 
-        params = {
-            "category": activity,
-            "bias": location,
-            "limit":10,
-            "apiKey":os.environ.get("geoapifyApiKey")
-        }
+            params = {
+                "category": activity,
+                "bias": location,
+                "limit":10,
+                "apiKey":os.environ.get("geoapifyApiKey")
+            }
 
-        url = f"https://api.geoapify.com/v2/places?categories={params['category']}&filter=circle:{params['bias']},1000&limit=10&apiKey={params['apiKey']}"
-        api_result = requests.get(url)
-        print(url)
-        if api_result.status_code == 200:
-            data_api = api_result.json()
-            print("Geoapify API response:", data_api)
-        else:
-            print("Error calling Geoapify API:", data_api.text)
+            url = f"https://api.geoapify.com/v2/places?categories={params['category']}&filter=circle:{params['bias']},1000&limit=10&apiKey={params['apiKey']}"
+            api_result = requests.get(url)
+            print(url)
+            if api_result.status_code == 200:
+                data_api = api_result.json()
+                print("Geoapify API response:", data_api)
+            else:
+                print("Error calling Geoapify API:", data_api.text)
 
-        response = generate(model = '4o-mini',
-            system = 'Give human readable text',
-            query = f"Format the results of this api call nicely: {api_result.json()}",
-            temperature=0.3,
-        )
-        response_text = response['response']
-        print('LIST OF PLACES GENERATED')
-        print(response_text)
+            response = generate(model = '4o-mini',
+                system = 'Give human readable text',
+                query = f"Format the results of this api call nicely: {api_result.json()}",
+                temperature=0.3,
+            )
+            response_text = response['response']
+            print('LIST OF PLACES GENERATED')
+            print(response_text)
+        except Exception as e:
+            # Log the error and update response_text with a generic error message
+            print(f"An error occurred: {e}")
+            response_text = "An error occurred while processing your request. Please try again later."
 
         #rocketchat_response = send_message_with_buttons(user, response_text)
     
