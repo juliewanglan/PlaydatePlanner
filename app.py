@@ -125,6 +125,9 @@ def main():
                 system = 'Give human readable text',
                 query = f"Format the results of this api call nicely: {api_result.json()}",
                 temperature=0.3,
+                lastk=0,
+                session_id="generic"
+
             )
             response_text = response['response']
             print('LIST OF PLACES GENERATED')
@@ -162,6 +165,8 @@ def agent_location(query):
         system = system,
         query = query_edited,
         temperature=0.3,
+        lastk=0,
+        session_id="generic"
     )
 
     try:
@@ -215,6 +220,8 @@ def agent_activity(message):
         system="Extract the appropriate category based on the user's request. Respond only with the category.",
         query=query,
         temperature=0.0,
+        lastk=0,
+        session_id="generic"
     )
     
     # Extract the category from the LLM response.
