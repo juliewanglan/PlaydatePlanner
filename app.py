@@ -259,15 +259,17 @@ def agent_activity(message):
         f'''
         This is what the user wants in a plan: {message}.
         Based off this message and the uploaded document, respond with the closest activity.
-        Go through both the message nad the uploaded document
+        Go through both the message and the uploaded document.
         Or, match their descripton with the closest activity.
         Only respond with the category from the document (and nothing else):
         Respond with only the category value, for example: catering.restaurant
+
+        Make sure the name of the category matches exacrly with the uploaded document.
         '''
     )
     response = generate(
         model='4o-mini',
-        system="Extract the appropriate category based on the user's request. Respond only with the category.",
+        system="Extract the appropriate category based on the user's request. Respond only with the category. Make sure the category is explicitly listed in the document",
         query=query,
         temperature=0.0,
         lastk=1,
