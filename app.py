@@ -71,7 +71,7 @@ def ask_for_friend_username(username):
 
         # Set the user's state to "waiting_for_friend_username"
         user_states[username] = "waiting_for_friend_username"
-        print("USER STATES:", user_states)
+        print("askforfriend: STATES:", user_states)
 
         return response.json()
     except Exception as e:
@@ -99,7 +99,7 @@ def main():
 
     print(f"Message from {user} : {message}")
 
-    print("THIS IS USER STATES:", user_states)
+    print("2. THIS IS USER STATES:", user_states)
     if user in user_states:
         # Save the friend's username
         friend_username = message.strip()
@@ -122,6 +122,7 @@ def main():
 
         # Optionally, send the plan to the friend here
         # (You can reuse the logic from earlier to send the plan)
+        print("3. THIS IS USER STATES:", user_states)
 
         return jsonify({"status": "friend_username_saved", "friend_username": friend_username})
 
