@@ -95,11 +95,13 @@ def main():
         system=system,
         query= query,
         temperature=0.0,
-        lastk=50,
+        lastk=20,
         session_id=sess_id
     )
 
     response_text = response['response']
+
+    print(sess_id)
 
     if "All necessary details completed" in response_text:
         print("ALL NECESSARY DETAILS")
