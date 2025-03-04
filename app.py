@@ -1,6 +1,6 @@
 import requests
 from flask import Flask, request, jsonify
-from llmproxy import generate
+from llmproxy import generate, pdf_upload
 import os
 import uuid
 
@@ -44,8 +44,16 @@ def send_message_with_buttons(username, text):
         ]
     }
 
-    response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-    return response.json()
+    try:
+        # Send the message with buttons to Rocket.Chat
+        response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+        response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
+        print(f"Message with buttons sent successfully to {username}.")
+        return response.json()  # Return the JSON response if successful
+    except Exception as e:
+        # Handle any other unexpected errors
+        print(f"An unexpected error occurred while sending message to {username}: {e}")
+        return {"error": f"Unexpected error: {e}"}
 
 @app.route('/', methods=['POST'])
 def hello_world():
@@ -142,7 +150,7 @@ def main():
     # feed response to location agent and activity agent
     # agents parse thru the info to get the zipcode and activity
 
-    # rocketchat_response = send_message_with_buttons(user, response_text)
+    rocketchat_response = send_message_with_buttons(user, response_text)
     
     # Send response back
     print(response_text)
@@ -179,18 +187,19 @@ def agent_location(query):
 
 def agent_activity(message):
     print('IN ACTIVITY AGENT')
+
+    csgrad_handbook_pdf = pdf_upload(
+        path = 'categories.pdf',
+        session_id='activity_agent',
+        strategy = 'smart')
     query = (
         f'''
         This is what the user wants in a plan: {message}.
-        Based off this message, respond with the closest activity.
-        If the user is not sure, list out some categories from this list as an idea. 
+        Based off this message and the uploaded document, respond with the closest activity.
         Or, match their descripton with the closest activity.
-        Only respond with the category from the following mapping (and nothing else):
+        Only respond with the category from the following mapping or a category in the document (and nothing else):
             "restaurant": "catering.restaurant",
-            "dining": "catering.restaurant",
-            "food": "catering.restaurant",
             "cafe": "catering.cafe",
-            "coffee": "catering.cafe",
             "bar": "catering.pub",
             "fast food": "catering.fast_food",
             
@@ -204,13 +213,18 @@ def agent_activity(message):
             "live music": "entertainment.culture",
             
             "shopping": "commercial.shopping_mall",
-            "mall": "commercial.shopping_mall",
             "market": "commercial.marketplace",
             
-            "hiking": "leisure.hiking",
-            "gym": "sport.fitness",
-            "fitness": "sport.fitness",
-            "spa": "leisure.spa"
+            "sports": "commercial.outdoor_and_sport",
+            "hobby": "commercial.hobby",
+            "books": "commercial.books",
+            "flowers": "commercial.florist",
+            "toys and games": "commercial.toy_and_game",
+
+            "thrift": "commercial.second_hand",
+            "antiques": "commercial.antiques",
+            "culture": "entertainment.culture",
+            "arcade": "entertainment_arcade",
             
         Respond with only the category value, for example: catering.restaurant
         '''
@@ -220,8 +234,8 @@ def agent_activity(message):
         system="Extract the appropriate category based on the user's request. Respond only with the category.",
         query=query,
         temperature=0.0,
-        lastk=0,
-        session_id="generic"
+        lastk=1,
+        session_id="activity_agent"
     )
     
     # Extract the category from the LLM response.
