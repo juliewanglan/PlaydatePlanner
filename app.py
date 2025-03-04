@@ -133,7 +133,7 @@ def main():
         response_text = response['response']
         print('LIST OF PLACES GENERATED')
         print(response_text)
-        return jsonify({"text": response_text})
+        return response_text
 
         #rocketchat_response = send_message_with_buttons(user, response_text)
     
