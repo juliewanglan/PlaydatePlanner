@@ -224,7 +224,7 @@ def agent_activity(message):
             "thrift": "commercial.second_hand",
             "antiques": "commercial.antiques",
             "culture": "entertainment.culture",
-            "arcade": "entertainment_arcade",
+            "arcade": "entertainment.amusement_arcade",
             
         Respond with only the category value, for example: catering.restaurant
         '''
