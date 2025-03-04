@@ -110,6 +110,11 @@ def main():
             "channel": f"@{user}",
             "text": f"Got it! I'll send the plan to @{friend_username}."
         }
+
+        payload={
+            "channel": f"@{friend_username}",
+            "text": f"HIHI MESSAGE!!"
+        }
         requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
 
         # Optionally, send the plan to the friend here
@@ -268,7 +273,7 @@ def agent_activity(message):
         lastk=1,
         session_id="activity_agent",
         rag_usage=True,
-        rag_threshold='0.9',
+        rag_threshold='0.95',
         rag_k=1
     )
     
