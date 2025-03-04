@@ -170,7 +170,7 @@ def agent_location(query):
 
     try:
         print(response['response'])
-        return response['response']
+        return response.get('response', '').strip()
     except Exception as e:
         print(f"Error occured with parsing output: {response}")
         raise e
