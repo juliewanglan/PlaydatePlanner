@@ -5,7 +5,7 @@ import os
 import uuid
 
 app = Flask(__name__)
-sess_id = "playdatePlanner-"
+session_id = "playdatePlanner-"
 
 # Rocket.Chat API endpoint
 ROCKETCHAT_URL = "https://chat.genaiconnect.net/api/v1/chat.postMessage"  # Keep the same URL
@@ -58,7 +58,7 @@ def main():
     # Extract relevant information
     user = data.get("user_name", "Unknown")
     message = data.get("text", "")
-    sess_id = sess_id + user
+    sess_id = session_id + user
 
     print(data)
 
