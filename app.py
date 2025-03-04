@@ -129,8 +129,11 @@ def main():
 
     print(f"Message from {user} : {message}")
 
+    print(len(message.split()) == 1)
     if len(message.split()) == 1:
+        print("MESSAGE LENGTH IS 1")
         if is_valid_username(message):
+            print("VALID USERNAME")
             plan_text = "HIHI MESSAGE!!"  # Replace with your actual plan message
             send_plan_to_friend(message, plan_text)
             return jsonify({"status": "plan_sent", "friend_username": message})
@@ -140,7 +143,7 @@ def main():
                 "channel": f"@{user}",
                 "text": f"'{message}' is not a valid username. Please try again."
             }
-            requests.post(f"{ROCKETCHAT_URL}/chat.postMessage", json=error_payload, headers=HEADERS)
+            requests.post(f"{ROCKETCHAT_URL}", json=error_payload, headers=HEADERS)
             return jsonify({"status": "invalid_username"})
 
 
