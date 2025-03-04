@@ -94,7 +94,7 @@ def main():
         system=system,
         query= query,
         temperature=0.0,
-        lastk=100,
+        lastk=10,
         session_id=sess_id
     )
 
@@ -131,7 +131,6 @@ def main():
         response_text = response['response']
         print('LIST OF PLACES GENERATED')
         print(response_text)
-        return response_text
 
         #rocketchat_response = send_message_with_buttons(user, response_text)
     
