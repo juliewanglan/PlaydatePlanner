@@ -257,7 +257,7 @@ def main():
         parts = message.split()
         if len(parts) >= 4:
             confirmed_user = parts[1]
-            confirmed_frined = parts[2]
+            confirmed_friend = parts[2]
             confirmation = parts[3]
 
             if confirmation == "yes": #SEND THE ICAL TO BOTH PARTIES
@@ -272,9 +272,10 @@ def main():
                 query = (f"""
                         Using the previously generated event summary from our conversation context, generate a complete and valid iCalendar (ICS) document
                         that reflects the event details.
-                        Name the event the name of the calendar event to the activity/place found in the API call.
-                        Set the location of the calendar event to the address of the location in the API call.
-                        Set the time of the calendar event to the time of the hangout.
+                        Name the name of the calendar event to the activity/place found in the summary.
+                        Set the location of the calendar event to the address of the location in the summary.
+                        Set the time of the calendar event to the time of the hangout, using the current date 
+                        as reference.
 
                          Output only the ICS content with no extra text. "
                         f"For reference, today's date and time is {datetime.now(ZoneInfo("America/New_York"))}."
@@ -302,12 +303,16 @@ def main():
                 # print("time:", datetime.now())
 
 
-                # files = {'file': ('event.ics', ical_content, 'text/calendar')}
-                # response = requests.post(url, headers=headers, data=data, files=files)
-                # if response.status_code == 200:
-                #     print("iCal file sent successfully!")
-                # else:
-                    # print("Error sending iCal file:", response.text)
+                files = {'file': ('event.ics', ical_content, 'text/calendar')}
+                upload_url = f"{API_BASE_URL}/rooms.upload"
+                response = requests.post(upload_url, headers=HEADERS, data=data, files=files)
+                
+                if response.status_code == 200:
+                    print("iCal file sent successfully!")
+                else:
+                    print("Error sending iCal file:", response.text)
+
+                
 
 
                 return jsonify({"status": "asked_for_friend_username"})
