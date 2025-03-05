@@ -158,7 +158,9 @@ def main():
                 query = (
                     f"""There is a previously generated API list of activities.
                     The user selected activity number {message.split()[0]} from that list.
-                    Please provide a detailed, human-readable summary of this activity or place, including key details such as location, features, and highlights.
+                    Please provide a detailed, human-readable summary of this activity or place, including key details.
+                    **Only** include the numbered place.
+                    In this summary, pleae also include the previously discussed time.
                     Make sure to retain this summary in our session context for future reference."""                    
                 ),
                 # Please provide a detailed, human-readable summary of this activity or place, including key details such as location, features, and highlights.
@@ -193,6 +195,15 @@ def main():
                 }
             ]
         }
+        try:
+            # Send the message with buttons to Rocket.Chat
+            response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+            response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
+            return response.json()  # Return the JSON response if successful
+        except Exception as e:
+            # Handle any other unexpected errors
+            return {"error": f"Unexpected error: {e}"}
+
 
     if (len(message.split()) == 1) and is_valid_username(message.split()[0]):
         print("MESSAGE LENGTH IS 1")
@@ -308,12 +319,13 @@ def main():
             response_text = response['response']
             print('LIST OF PLACES GENERATED')
             print(response_text)
+
+            rocketchat_response = send_message_with_buttons(user, response_text)
         except Exception as e:
             # Log the error and update response_text with a generic error message
             print(f"An error occurred: {e}")
             response_text = "An error occurred while processing your request. Please try again later."
-
-        rocketchat_response = send_message_with_buttons(user, response_text)
+        
     else: 
         # feed response to location agent and activity agent
         # agents parse thru the info to get the zipcode and activity
