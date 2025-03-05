@@ -131,7 +131,7 @@ def main():
 
     print("message length", len(message.split()[0]) == 1)
     print(message.split())
-    if (len(message.split()) == 1) and is_valid_username(message.split()):
+    if (len(message.split()) == 1) and is_valid_username(message.split()[0]):
         print("MESSAGE LENGTH IS 1")
         print("VALID USERNAME")
         plan_text = "HIHI MESSAGE!!"  # Replace with your actual plan message
