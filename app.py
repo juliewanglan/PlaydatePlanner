@@ -303,7 +303,7 @@ def main():
                     session_id=sess_id
                 )
                 ical_content = response['response'].strip()
-                if ical_content.startswith("'''") and ical_content.endswith("'''"):
+                if ical_content.startswith("```") and ical_content.endswith("```"):
                     ical_content = ical_content[3:-3].strip()
                 print("Generated ICS content:")
                 print(ical_content)
