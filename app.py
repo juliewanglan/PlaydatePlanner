@@ -22,6 +22,10 @@ HEADERS = {
     "X-User-Id": os.environ.get("RC_userId") #Replace with your bot user id for local testing or keep it and store secrets in Koyeb
 }
 
+upload_headers = {
+    "X-Auth-Token": os.environ.get("RC_token"),  #Replace with your bot token for local testing or keep it and store secrets in Koyeb
+    "X-User-Id": os.environ.get("RC_userId") #Replace with your bot user id for local testing or keep it and store secrets in Koyeb
+}
 
 def send_message_with_buttons(username, text):
     """Send a message with Yes/No buttons for plan confirmation."""
@@ -318,18 +322,17 @@ def main():
 
                 # Prepare the file for upload
                 try:
-                    with open(ics_filename, 'rb') as ics_file:
-                        files = {'file': (ics_filename, ics_file, 'text/calendar')}
-                        data = {'description': 'Your calendar invitation'}
-                        print("About to send file upload POST request with data:", data)
-                        print("Headers being used:", HEADERS)
-                        response_upload = requests.post(upload_url, headers=HEADERS, data=data, files=files)
-                        print("File upload response status code:", response_upload.status_code)
-                        print("File upload response text:", response_upload.text)
-                        if response_upload.status_code == 200:
-                            print(f"File {ics_filename} has been sent to {confirmed_user}.")
-                        else:
-                            print(f"Failed to send file to {confirmed_user}. Error: {response_upload.text}")
+                    files = {'file': (os.path.basename(ics_filename), open(ics_filename, "rb"))}
+                    data = {'description': 'Your calendar invitation'}
+                    print("About to send file upload POST request with data:", data)
+                    print("Headers being used:", HEADERS)
+                    response_upload = requests.post(upload_url, headers=upload_headers, data=data, files=files)
+                    print("File upload response status code:", response_upload.status_code)
+                    print("File upload response text:", response_upload.text)
+                    if response_upload.status_code == 200:
+                        print(f"File {ics_filename} has been sent to {confirmed_user}.")
+                    else:
+                        print(f"Failed to send file to {confirmed_user}. Error: {response_upload.text}")
                 except Exception as e:
                     print(f"An exception occurred during file upload: {e}")
                 
