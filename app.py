@@ -215,7 +215,7 @@ def main():
             system="List the options clearly",
             query= query,
             temperature=0.0,
-            lastk=10,
+            lastk=20,
             session_id=sess_id
         )
         plan_text = plan['response']
@@ -261,7 +261,7 @@ def main():
         system=system,
         query= query,
         temperature=0.0,
-        lastk=10,
+        lastk=20,
         session_id=sess_id
     )
 
@@ -295,10 +295,9 @@ def main():
                 model = '4o-mini',
                 system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
                 query = (
-                    f'''The API call gives a list of potential activities. Please
-                    present them as possible activities and format the results
-                    nicely: {api_result.json()}. Please remember the results of this API list.
-                    They will be referred to as they are numbered in the next call.'''
+                    f'''The following list of activities was generated based on an API call: {api_result.json()}.
+                    For clarity and future reference, please present them as numbered options.
+                    In subsequent requests, refer to these numbers for any follow-up actions.'''
                 ),
                 temperature=0.3,
                 lastk=20,
