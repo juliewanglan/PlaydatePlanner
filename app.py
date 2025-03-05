@@ -261,15 +261,20 @@ def main():
             if confirmation == "yes": #SEND THE ICAL TO BOTH PARTIES
                 # Ask for the friend's username
                 system_message = (
-                    "You are an assistant that generates iCalendar (ICS) documents. " 
-                    "When provided with event summary information, your output must be a valid ICS file conforming to RFC 5545, " 
+                    "You are an assistant that generates iCalendar (ICS) documents based on previous conversation context. " 
+                    "Your output must be a valid ICS file conforming to RFC 5545, " 
                     "and include only the ICS content without any additional commentary or explanation. " 
                     "Ensure you include mandatory fields such as BEGIN:VCALENDAR, VERSION, PRODID, BEGIN:VEVENT, UID, DTSTAMP, " 
                     "DTSTART, DTEND, and SUMMARY."
                 )
                 query = (f"""
-                        "Using the previously generated event summary from our conversation context, generate a complete and valid iCalendar (ICS) document "
-                        "that reflects the event details. Output only the ICS content with no extra text. "
+                        Using the previously generated event summary from our conversation context, generate a complete and valid iCalendar (ICS) document
+                        that reflects the event details.
+                        Name the event the name of the calendar event to the activity/place found in the API call.
+                        Set the location of the calendar event to the address of the location in the API call.
+                        Set the time of the calendar event to the time of the hangout.
+
+                         Output only the ICS content with no extra text. "
                         f"For reference, today's date and time is {datetime.now()}."
                         """)
                 response = generate(
