@@ -272,13 +272,11 @@ def main():
                 query = (f"""
                         Using the previously generated event summary from our conversation context, generate a complete and valid iCalendar (ICS) document
                         that reflects the event details.
-                        Name the name of the calendar event to the activity/place found in the summary.
+                        Name the calendar event based on the activity/place found in the summary.
                         Set the location of the calendar event to the address of the location in the summary.
-                        Set the time of the calendar event to the time of the hangout, using the current date 
-                        as reference.
-
-                         Output only the ICS content with no extra text. "
-                        f"For reference, today's date and time is {datetime.now(ZoneInfo("America/New_York"))}."
+                        Set the time of the calendar event to the time of the hangout, using the current date as reference.
+                        Output only the ICS content with no extra text.
+                        For reference, today's date and time is {datetime.now(ZoneInfo('America/New_York'))}.
                         """)
                 response = generate(
                     model='4o-mini',
@@ -308,7 +306,7 @@ def main():
 
 
                 # Define the upload URL (same for all uploads)
-                upload_url = f"{API_BASE_URL}/rooms.upload"
+                upload_url = f"{API_BASE_URL}/im.upload"
 
                 # Write the ICS content to a file
                 ics_filename = "event.ics"
