@@ -255,7 +255,18 @@ def main():
                 ask_for_friend_username(confirmed_user)
                 return jsonify({"status": "asked_for_friend_username"})
             elif confirmation == "no":
-                return jsonify({"status": "confirmation_denied"})
+                payload = {
+                    "channel": f"@{confirmed_user}",
+                    "text": f"The event has been canceled. Please try again!"
+                }
+                try:
+                    response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+                    response.raise_for_status()
+
+                    return response.json()
+                except Exception as e:
+                    print(f"An error occurred stating the confirmation: {e}")
+                    return {"error": f"Error: {e}"}
         return jsonify({"status": "invalid_confirmation"})
     
     if message.startswith("!final"):
@@ -291,7 +302,9 @@ def main():
                     lastk=20,
                     session_id=sess_id
                 )
-                ical_content = response['response']
+                ical_content = response['response'].strip()
+                if ical_content.startswith("'''") and ical_content.endswith("'''"):
+                    ical_content = ical_content[3:-3].strip()
                 print("Generated ICS content:")
                 print(ical_content)
 
@@ -323,7 +336,7 @@ def main():
                 # Prepare the file for upload
                 try:
                     files = {'file': (os.path.basename(ics_filename), open(ics_filename, "rb"))}
-                    data = {'description': 'Your calendar invitation'}
+                    data = {'description': 'Here is a calendar invitation with your plan!'}
                     print("About to send file upload POST request with data:", data)
                     print("Headers being used:", HEADERS)
                     response_upload = requests.post(upload_url, headers=upload_headers, data=data, files=files)
