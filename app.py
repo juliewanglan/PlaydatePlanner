@@ -291,8 +291,61 @@ def agent_activity(message):
         f'''
         The user provided the following request: ***{message}***.
         Based on this request and the uploaded document, find the closest matching activity category.
-        The category **must** be explicitly listed in the document. 
-        Respond **only** with the exact category name from the document. Do not add any extra text. 
+        The category **must** be explicitly listed in the following:
+
+        "activity, activity.community_center, activity.sport_club, catering.restaurant,
+        catering.fast_food, catering.cafe, catering.food_court, catering.bar, catering.pub,
+        catering.ice_cream, catering.biergarten, catering.taproom, entertainment.culture.theatre,
+        entertainment.culture.arts_centre, entertainment.culture.gallery, entertainment.zoo,
+        entertainment.aquarium, entertainment.planetarium, entertainment.museum, entertainment.cinema,
+        entertainment.amusement_arcade, entertainment.escape_game, entertainment.miniature_golf,
+        entertainment.bowling_alley, entertainment.flying_fox, entertainment.theme_park,
+        entertainment.water_park, entertainment.activity_park.trampoline,
+        entertainment.activity_park.climbing, leisure.picnic, leisure.playground, leisure.spa,
+        leisure.park, leisure.park.garden, leisure.park.nature_reserve, camping.camp_pitch,
+        camping.camp_site, camping.summer_camp, camping.caravan_site, sport.stadium,
+        sport.dive_centre, sport.horse_riding, sport.ice_rink, sport.pitch, sport.sports_centre,
+        sport.swimming_pool, sport.track, sport.fitness, ski, tourism.attraction.viewpoint,
+        tourism.sights.castle, tourism.sights.ruines, tourism.sights.archaeological_site,
+        tourism.sights.lighthouse, tourism.sights.tower, adult.nightclub, adult.casino, beach,
+        natural.forest, natural.water.hot_spring, natural.mountain, natural.sand.dune, national_park,
+        pet.dog_park, commercial.outdoor_and_sport, commercial.outdoor_and_sport.water_sports,
+        commercial.outdoor_and_sport.ski, commercial.outdoor_and_sport.diving, commercial.outdoor_and_sport.hunting,
+        commercial.outdoor_and_sport.bicycle, commercial.outdoor_and_sport.fishing,
+        commercial.outdoor_and_sport.golf, commercial.clothing.sport, commercial.marketplace,
+        commercial.shopping_mall, commercial.department_store, commercial.clothing,
+        commercial.clothing.accessories, commercial.gift_and_souvenir, commercial.bag, commercial.jewelry,
+        commercial.watches, commercial.art, commercial.antiques, commercial.video_and_music,
+        catering.restaurant.pizza, catering.restaurant.burger, catering.restaurant.regional,
+        catering.restaurant.italian, catering.restaurant.chinese, catering.restaurant.sandwich,
+        catering.restaurant.chicken, catering.restaurant.mexican, catering.restaurant.japanese,
+        catering.restaurant.american, catering.restaurant.kebab, catering.restaurant.indian,
+        catering.restaurant.asian, catering.restaurant.sushi, catering.restaurant.french,
+        catering.restaurant.german, catering.restaurant.thai, catering.restaurant.greek,
+        catering.restaurant.seafood, catering.restaurant.fish_and_chips, catering.restaurant.steak_house,
+        catering.restaurant.international, catering.restaurant.tex-mex, catering.restaurant.vietnamese,
+        catering.restaurant.turkish, catering.restaurant.korean, catering.restaurant.noodle,
+        catering.restaurant.barbecue, catering.restaurant.spanish, catering.restaurant.fish,
+        catering.restaurant.ramen, catering.restaurant.mediterranean, catering.restaurant.friture,
+        catering.restaurant.beef_bowl, catering.restaurant.lebanese, catering.restaurant.wings,
+        catering.restaurant.georgian, catering.restaurant.tapas, catering.restaurant.indonesian,
+        catering.restaurant.arab, catering.restaurant.portuguese, catering.restaurant.russian,
+        catering.restaurant.filipino, catering.restaurant.african, catering.restaurant.malaysian,
+        catering.restaurant.caribbean, catering.restaurant.peruvian, catering.restaurant.bavarian,
+        catering.restaurant.brazilian, catering.restaurant.curry, catering.restaurant.dumpling,
+        catering.restaurant.persian, catering.restaurant.argentinian, catering.restaurant.oriental,
+        catering.restaurant.balkan, catering.restaurant.moroccan, catering.restaurant.pita,
+        catering.restaurant.ethiopian, catering.restaurant.taiwanese, catering.restaurant.latin_american,
+        catering.restaurant.hawaiian, catering.restaurant.irish, catering.restaurant.austrian,
+        catering.restaurant.croatian, catering.restaurant.danish, catering.restaurant.tacos,
+        catering.restaurant.bolivian, catering.restaurant.hungarian, catering.restaurant.western,
+        catering.restaurant.european, catering.restaurant.jamaican, catering.restaurant.cuban,
+        catering.restaurant.soup, catering.restaurant.uzbek, catering.restaurant.nepalese,
+        catering.restaurant.czech, catering.restaurant.syrian, catering.restaurant.afghan,
+        catering.restaurant.malay, catering.restaurant.chili, catering.restaurant.belgian,
+        catering.restaurant.ukrainian, catering.restaurant.swedish, catering.restaurant.pakistani"
+        
+        Respond **only** with the exact category name from the above. Do not add any extra text. 
         Example output: `catering.restaurant`
         '''
     )
@@ -311,9 +364,6 @@ def agent_activity(message):
         temperature=0.0,
         lastk=1,
         session_id="activity_agent",
-        rag_usage=True,
-        rag_threshold='0.90',
-        rag_k=3
     )
     
     # Extract the category from the LLM response.
