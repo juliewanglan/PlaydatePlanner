@@ -4,6 +4,7 @@ from flask_session import Session
 from llmproxy import generate, pdf_upload
 import os
 import uuid
+from datetime import datetime 
 
 app = Flask(__name__)
 session_id = "4playdatePlanner-"
@@ -102,13 +103,13 @@ def send_plan_to_friend(friend_username, username, plan_text):
                     {
                         "type": "button",
                         "text": "✅ Yes",
-                        "msg": f"!confirm {username} yes",
+                        "msg": f"!final {username} {friend_username} yes",
                         "msg_in_chat_window": True
                     },
                     {
                         "type": "button",
                         "text": "❌ No",
-                        "msg": f"!confirm {username} no",
+                        "msg": f"!final {username} {friend_username} no",
                         "msg_in_chat_window": True
                     }
                 ]
@@ -249,11 +250,57 @@ def main():
             elif confirmation == "no":
                 return jsonify({"status": "confirmation_denied"})
         return jsonify({"status": "invalid_confirmation"})
+    
+    if message.startswith("!final"):
+        parts = message.split()
+        if len(parts) >= 4:
+            confirmed_user = parts[1]
+            confirmed_frined = parts[2]
+            confirmation = parts[3]
+
+            if confirmation == "yes": #SEND THE ICAL TO BOTH PARTIES
+                # Ask for the friend's username
+                system_message = (
+                    "You are an assistant that generates iCalendar (ICS) documents. " 
+                    "When provided with event summary information, your output must be a valid ICS file conforming to RFC 5545, " 
+                    "and include only the ICS content without any additional commentary or explanation. " 
+                    "Ensure you include mandatory fields such as BEGIN:VCALENDAR, VERSION, PRODID, BEGIN:VEVENT, UID, DTSTAMP, " 
+                    "DTSTART, DTEND, and SUMMARY."
+                )
+                query = (f"""
+                        Using the previously generated summary of the plan, generate
+                        a complete and valid iCalendar (ICS) document.
+                        Include only the ICS content with no extra text.
+                        For reference, today's date and time is {datetime.now()}
+                        """)
+                response = generate(
+                    model='4o-mini',
+                    system= system_message,
+                    query= "query",
+                    temperature=0.0,
+                    lastk=20,
+                    session_id=sess_id
+                )
+                ical_content = response['response']
+                print(ical_c)
+                # files = {'file': ('event.ics', ical_content, 'text/calendar')}
+                # response = requests.post(url, headers=headers, data=data, files=files)
+                # if response.status_code == 200:
+                #     print("iCal file sent successfully!")
+                # else:
+                    # print("Error sending iCal file:", response.text)
+
+
+                return jsonify({"status": "asked_for_friend_username"})
+            elif confirmation == "no":
+                return jsonify({"status": "confirmation_denied"})
+        return jsonify({"status": "invalid_confirmation"})
+
 
     query = (
         "You are PlaydatePlanner, a friendly assistant helping users plan a hangout. "
         "Please use emojis"
-        "Your goal is to gather three key details: location, time, and activity. "
+        "Your goal is to gather three key details: location, date and time, and activity. "
         "Only ask about missing details—do not ask again if the user has already provided something. "
         "Once all details are collected, respond with exactly: 'All necessary details completed:' followed by a summary. "
 
