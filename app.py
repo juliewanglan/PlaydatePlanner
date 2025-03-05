@@ -268,10 +268,9 @@ def main():
                     "DTSTART, DTEND, and SUMMARY."
                 )
                 query = (f"""
-                        Using the previously generated summary of the plan, generate
-                        a complete and valid iCalendar (ICS) document.
-                        Include only the ICS content with no extra text.
-                        For reference, today's date and time is {datetime.now()}
+                        "Using the previously generated event summary from our conversation context, generate a complete and valid iCalendar (ICS) document "
+                        "that reflects the event details. Output only the ICS content with no extra text. "
+                        f"For reference, today's date and time is {datetime.now()}."
                         """)
                 response = generate(
                     model='4o-mini',
@@ -300,7 +299,7 @@ def main():
     query = (
         "You are PlaydatePlanner, a friendly assistant helping users plan a hangout. "
         "Please use emojis"
-        "Your goal is to gather three key details: location, date and time, and activity. "
+        "Your goal is to gather three key details: location, date, time (specific), and activity. "
         "Only ask about missing details—do not ask again if the user has already provided something. "
         "Once all details are collected, respond with exactly: 'All necessary details completed:' followed by a summary. "
 
