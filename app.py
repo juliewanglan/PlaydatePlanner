@@ -307,6 +307,7 @@ def main():
 
 
                 # Define the upload URL (same for all uploads)
+                print(room_id)
                 upload_url = f"{API_BASE_URL}/rooms.upload/{room_id}"
 
                 # Write the ICS content to a file
@@ -318,7 +319,7 @@ def main():
                 # For the first user:
                 with open(ics_filename, 'rb') as ics_file:
                     files = {'file': (ics_filename, ics_file, 'text/calendar')}
-                    data = {'description': 'Your calendar invitation', 'channel': f"@{confirmed_user}"}
+                    data = {'description': 'Your calendar invitation'}
                     response = requests.post(upload_url, headers=HEADERS, data=data, files=files)
                     if response.status_code == 200:
                         print(f"File {ics_filename} has been sent to {confirmed_user}.")
