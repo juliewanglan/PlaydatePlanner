@@ -129,23 +129,14 @@ def main():
 
     print(f"Message from {user} : {message}")
 
-    print("message length", len(message.split()) == 1)
+    print("message length", len(message.split()[0]) == 1)
     print(message.split())
     if (len(message.split()) == 1) and is_valid_username(message.split()):
         print("MESSAGE LENGTH IS 1")
-        if is_valid_username(message.split()):
-            print("VALID USERNAME")
-            plan_text = "HIHI MESSAGE!!"  # Replace with your actual plan message
-            send_plan_to_friend(message, plan_text)
-            return jsonify({"status": "plan_sent", "friend_username": message})
-        else:
-            # Optionally, you might want to send an error back to the user.
-            error_payload = {
-                "channel": f"@{user}",
-                "text": f"'{message}' is not a valid username. Please try again."
-            }
-            requests.post(f"{ROCKETCHAT_URL}", json=error_payload, headers=HEADERS)
-            return jsonify({"status": "invalid_username"})
+        print("VALID USERNAME")
+        plan_text = "HIHI MESSAGE!!"  # Replace with your actual plan message
+        send_plan_to_friend(message, plan_text) 
+        return jsonify({"status": "plan_sent", "friend_username": message})
 
 
     # Check if the message is a confirmation response
