@@ -282,6 +282,7 @@ def main():
                 )
                 ical_content = response['response']
                 print(ical_content)
+                print("time:", datetime.now())
                 # files = {'file': ('event.ics', ical_content, 'text/calendar')}
                 # response = requests.post(url, headers=headers, data=data, files=files)
                 # if response.status_code == 200:
