@@ -4,7 +4,7 @@ from flask_session import Session
 from llmproxy import generate, pdf_upload
 import os
 import uuid
-from datetime import datetime 
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 session_id = "4playdatePlanner-"
@@ -275,19 +275,31 @@ def main():
                         Set the time of the calendar event to the time of the hangout.
 
                          Output only the ICS content with no extra text. "
-                        f"For reference, today's date and time is {datetime.now()}."
+                        f"For reference, today's date and time is {datetime.now(timezone.est)}."
                         """)
                 response = generate(
                     model='4o-mini',
                     system= system_message,
-                    query= "query",
+                    query= query,
                     temperature=0.0,
                     lastk=20,
                     session_id=sess_id
                 )
                 ical_content = response['response']
                 print(ical_content)
-                print("time:", datetime.now())
+                # print("time:", datetime.now())
+                # est_now = datetime.now(timezone.est)
+                # formatted_time = est_now.strftime("%Y%m%dT%H%M%SZ")
+                # print(formatted_time)
+
+                # # file_name = "event.ics"
+                # # with open(file_name, "w") as ics_file:
+                # #     ics_file.write(ical_content)
+                
+                # print(f"iCal file '{file_name}' created successfully!")
+                # print("time:", datetime.now())
+
+
                 # files = {'file': ('event.ics', ical_content, 'text/calendar')}
                 # response = requests.post(url, headers=headers, data=data, files=files)
                 # if response.status_code == 200:
