@@ -303,18 +303,41 @@ def main():
                 # print("time:", datetime.now())
 
 
-                files = {'file': ('event.ics', ical_content, 'text/calendar')}
-                upload_url = f"{API_BASE_URL}/rooms.upload"
-                response = requests.post(upload_url, headers=HEADERS, data=data, files=files)
+                # files = {'file': ('event.ics', ical_content, 'text/calendar')}
+                # upload_url = f"{API_BASE_URL}/rooms.upload"
+
+
+                # Define the file name
+                ics_filename = "event.ics"
+
+                with open(ics_filename, 'rb') as ics_file:
+                    files = {'file': (ics_filename, ics_file)}
+                    response = requests.post(upload_url, headers=HEADERS, files=files)
+                    if response.status_code == 200:
+                        print(f"File {ics_filename} has been sent to {confirmed_user}.")
+                    else:
+                        print(f"Failed to send file to {confirmed_user}. Error: {response.text}")
+
+                    # Repeat the process for confirmed_friend
+                    upload_url = f"{API_BASE_URL}/rooms.upload/{confirmed_friend}"
+                    with open(ics_filename, 'rb') as ics_file:
+                        files = {'file': (ics_filename, ics_file)}
+                        response = requests.post(upload_url, headers=HEADERS, files=files)
+
+                    if response.status_code == 200:
+                        print(f"File {ics_filename} has been sent to {confirmed_friend}.")
+                    else:
+                        print(f"Failed to send file to {confirmed_friend}. Error: {response.text}")
+
+
+                # response = requests.post(upload_url, headers=HEADERS, data=data, files=files)
                 
-                if response.status_code == 200:
-                    print("iCal file sent successfully!")
-                else:
-                    print("Error sending iCal file:", response.text)
+                # if response.status_code == 200:
+                #     print("iCal file sent successfully!")
+                # else:
+                #     print("Error sending iCal file:", response.text)
 
-                
-
-
+            
                 return jsonify({"status": "asked_for_friend_username"})
             elif confirmation == "no":
                 return jsonify({"status": "confirmation_denied"})
