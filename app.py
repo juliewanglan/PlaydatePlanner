@@ -156,8 +156,10 @@ def main():
                 model = '4o-mini',
                 system = 'Give human readable text and be friendly',
                 query = (
-                    f"""What is option {message.split()[0]} from the previous list.
-                    """
+                    f"""There is a previously generated API list of activities.
+                    The user selected activity number {message.split()[0]} from that list.
+                    Please provide a detailed, human-readable summary of this activity or place, including key details such as location, features, and highlights.
+                    Make sure to retain this summary in our session context for future reference."""                    
                 ),
                 # Please provide a detailed, human-readable summary of this activity or place, including key details such as location, features, and highlights.
                 #     Make sure to retain this summary in our session context for future reference.
@@ -239,6 +241,7 @@ def main():
 
     query = (
         "You are PlaydatePlanner, a friendly assistant helping users plan a hangout. "
+        "Please use emojis"
         "Your goal is to gather three key details: location, time, and activity. "
         "Only ask about missing details—do not ask again if the user has already provided something. "
         "Once all details are collected, respond with exactly: 'All necessary details completed:' followed by a summary. "
