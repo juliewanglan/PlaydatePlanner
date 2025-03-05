@@ -6,7 +6,7 @@ import os
 import uuid
 
 app = Flask(__name__)
-session_id = "3playdatePlanner-"
+session_id = "4playdatePlanner-"
 
 # Rocket.Chat API endpoint
 API_BASE_URL = "https://chat.genaiconnect.net/api/v1"
@@ -157,7 +157,7 @@ def main():
                 system = 'Give human readable text and be friendly',
                 query = (
                     f'''The user has chosen activity number {message.split()[0]}
-                    from this list: {api_result.json}. Please generate a summary
+                    from the API list. Please generate a summary
                     with information on this activity/place. Please remember this summary
                     going forward.'''
                 ),
@@ -293,16 +293,15 @@ def main():
 
             response = generate(
                 model = '4o-mini',
-                system = 'Give human readable text',
+                system = 'Be friendly and give human readable text. Please remember this api list.',
                 query = (
                     f'''The API call gives a list of potential activities. Please
                     present them as possible activities and format the results
-                    nicely: {api_result.json}'''
+                    nicely: {api_result.json()}. Please remember this api list.'''
                 ),
                 temperature=0.3,
                 lastk=20,
                 session_id=sess_id
-
             )
             response_text = response['response']
             print('LIST OF PLACES GENERATED')
