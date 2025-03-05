@@ -134,7 +134,23 @@ def main():
     if (len(message.split()) == 1) and is_valid_username(message.split()[0]):
         print("MESSAGE LENGTH IS 1")
         print("VALID USERNAME")
-        plan_text = "HIHI MESSAGE!!"  # Replace with your actual plan message
+
+
+        query = (
+            """
+            You are now presenting this plan to the user's friend. Summarize the
+            plan and present it to the friend.
+            """
+        )
+        plan = generate(
+            model='4o-mini',
+            system="Be friendly",
+            query= query,
+            temperature=0.0,
+            lastk=10,
+            session_id=sess_id
+        )
+        plan_text = plan['response']
         send_plan_to_friend(message, plan_text) 
         return jsonify({"status": "plan_sent", "friend_username": message})
 
