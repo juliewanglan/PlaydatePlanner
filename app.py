@@ -335,7 +335,7 @@ def main():
 
                 # Prepare the file for upload
                 try:
-                    files = {'file': (os.path.basename(ics_filename), open(ics_filename, "rb"))}
+                    files = {'file': (os.path.basename(ics_filename), open(ics_filename, "rb"), "text/calendar")}
                     data = {'description': 'Here is a calendar invitation with your plan!'}
                     print("About to send file upload POST request with data:", data)
                     print("Headers being used:", HEADERS)
