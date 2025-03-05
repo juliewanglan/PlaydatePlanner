@@ -27,21 +27,7 @@ def send_message_with_buttons(username, text):
         "text": text,
         "attachments": [
             {
-                "text": "Would you like to send these options to a friend?",
-                "actions": [
-                    {
-                        "type": "button",
-                        "text": "✅ Yes",
-                        "msg": f"!confirm {username} yes",
-                        "msg_in_chat_window": True
-                    },
-                    {
-                        "type": "button",
-                        "text": "❌ No",
-                        "msg": f"!confirm {username} no",
-                        "msg_in_chat_window": True
-                    }
-                ]
+                "text": "Which option do you like? Please respond with just the corresponding number.",
             }
         ]
     }
@@ -50,7 +36,7 @@ def send_message_with_buttons(username, text):
         # Send the message with buttons to Rocket.Chat
         response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
         response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
-        print(f"Message with buttons sent successfully to {username}.")
+        print(f"which option do you like the most is sent to {username}.")
         return response.json()  # Return the JSON response if successful
     except Exception as e:
         # Handle any other unexpected errors
@@ -90,22 +76,56 @@ def is_valid_username(username):
         print("Error validating username:", e)
         return False
 
-def send_plan_to_friend(friend_username, plan_text):
-    """
-    Send the plan message to the friend.
-    """
+def send_plan_to_friend(friend_username, username, plan_text):
+    # """
+    # Send the plan message to the friend.
+    # """
+    # payload = {
+    #     "channel": f"@{friend_username}",
+    #     "text": plan_text
+    # }
+    # try:
+    #     response = requests.post(f"{ROCKETCHAT_URL}", json=payload, headers=HEADERS)
+    #     response.raise_for_status()
+    #     print(f"Plan sent successfully to {friend_username}.")
+    #     return response.json()
+    # except Exception as e:
+    #     print(f"Error sending plan to {friend_username}: {e}")
+    #     return {"error": str(e)}
     payload = {
         "channel": f"@{friend_username}",
-        "text": plan_text
+        "text": plan_text,
+        "attachments": [
+            {
+                "text": "Do you like this plan?",
+                "actions": [
+                    {
+                        "type": "button",
+                        "text": "✅ Yes",
+                        "msg": f"!confirm {username} yes",
+                        "msg_in_chat_window": True
+                    },
+                    {
+                        "type": "button",
+                        "text": "❌ No",
+                        "msg": f"!confirm {username} no",
+                        "msg_in_chat_window": True
+                    }
+                ]
+            }
+        ]
     }
+
     try:
-        response = requests.post(f"{ROCKETCHAT_URL}", json=payload, headers=HEADERS)
-        response.raise_for_status()
-        print(f"Plan sent successfully to {friend_username}.")
-        return response.json()
+        # Send the message with buttons to Rocket.Chat
+        response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+        response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
+        print(f"Message with buttons sent successfully to {username}.")
+        return response.json()  # Return the JSON response if successful
     except Exception as e:
-        print(f"Error sending plan to {friend_username}: {e}")
-        return {"error": str(e)}
+        # Handle any other unexpected errors
+        print(f"An unexpected error occurred while sending message to {username}: {e}")
+        return {"error": f"Unexpected error: {e}"}
 
 
 @app.route('/', methods=['POST'])
@@ -131,27 +151,75 @@ def main():
 
     print("message length", len(message.split()[0]) == 1)
     print(message.split())
+    if (len(message.split()) == 1) and message.split()[0].isdigit():
+        response = generate(
+                model = '4o-mini',
+                system = 'Give human readable text and be friendly',
+                query = (
+                    f'''The user has chosen activity number {message.split()[0]}
+                    from this list: {api_result.json}. Please generate a summary
+                    with information on this activity/place. Please remember this summary
+                    going forward.'''
+                ),
+                temperature=0.3,
+                lastk=20,
+                session_id=sess_id
+
+            )
+        response_text = response['response']
+
+        payload = {
+            "channel": f"@{user}",
+            "text": response_text,
+            "attachments": [
+                {
+                    "text": "Do you like this plan?",
+                    "actions": [
+                        {
+                            "type": "button",
+                            "text": "✅ Yes",
+                            "msg": f"!confirm {user} yes",
+                            "msg_in_chat_window": True
+                        },
+                        {
+                            "type": "button",
+                            "text": "❌ No",
+                            "msg": f"!confirm {user} no",
+                            "msg_in_chat_window": True
+                        }
+                    ]
+                }
+            ]
+        }
+
     if (len(message.split()) == 1) and is_valid_username(message.split()[0]):
         print("MESSAGE LENGTH IS 1")
         print("VALID USERNAME")
 
 
+        # query = (
+        #     """
+        #     You are now presenting this plan to the user's friend. Summarize the
+        #     plan and present it to the friend.
+        #     """
+        # )
         query = (
             """
-            You are now presenting this plan to the user's friend. Summarize the
-            plan and present it to the friend.
+            Give the previously generated api call that gives options of activities.
+            You are presenting the list of potential activities to someone else and
+            introducing them.
             """
         )
         plan = generate(
             model='4o-mini',
-            system="Be friendly",
+            system="List the options clearly",
             query= query,
             temperature=0.0,
             lastk=10,
             session_id=sess_id
         )
         plan_text = plan['response']
-        send_plan_to_friend(message, plan_text) 
+        send_plan_to_friend(message, user, plan_text) 
         return jsonify({"status": "plan_sent", "friend_username": message})
 
 
@@ -223,12 +291,17 @@ def main():
             else:
                 print("Error calling Geoapify API")
 
-            response = generate(model = '4o-mini',
+            response = generate(
+                model = '4o-mini',
                 system = 'Give human readable text',
-                query = f"Format the results of this api call nicely: {api_result.json()}",
+                query = (
+                    f'''The API call gives a list of potential activities. Please
+                    present them as possible activities and format the results
+                    nicely: {api_result.json}'''
+                ),
                 temperature=0.3,
-                lastk=0,
-                session_id="generic"
+                lastk=20,
+                session_id=sess_id
 
             )
             response_text = response['response']
