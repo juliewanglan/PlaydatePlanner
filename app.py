@@ -156,12 +156,11 @@ def main():
                 model = '4o-mini',
                 system = 'Give human readable text and be friendly',
                 query = (
-                    f'''The user has chosen activity number {message.split()[0]}
-                    from the API list, or the activity list that you generated
-                    in the list just prior. Please generate a summary
-                    with information on this activity/place. Please remember this summary
-                    going forward.'''
+                    f"""What is option {message.split()[0]} from the previous list.
+                    """
                 ),
+                # Please provide a detailed, human-readable summary of this activity or place, including key details such as location, features, and highlights.
+                #     Make sure to retain this summary in our session context for future reference.
                 temperature=0.3,
                 lastk=20,
                 session_id=sess_id
