@@ -262,72 +262,98 @@ def main():
             confirmation = parts[3]
 
             if confirmation == "yes": #SEND THE ICAL TO BOTH PARTIES
-                # # Ask for the friend's username
-                # system_message = (
-                #     "You are an assistant that generates iCalendar (ICS) documents based on previous conversation context. " 
-                #     "Your output must be a valid ICS file conforming to RFC 5545, " 
-                #     "and include only the ICS content without any additional commentary or explanation. " 
-                #     "Ensure you include mandatory fields such as BEGIN:VCALENDAR, VERSION, PRODID, BEGIN:VEVENT, UID, DTSTAMP, " 
-                #     "DTSTART, DTEND, and SUMMARY."
-                # )
-                # query = (f"""
-                #         Using the previously generated event summary from our conversation context, generate a complete and valid iCalendar (ICS) document
-                #         that reflects the event details.
-                #         Name the calendar event based on the activity/place found in the summary.
-                #         Set the location of the calendar event to the address of the location in the summary.
-                #         Set the time of the calendar event to the time of the hangout, using the current date as reference.
-                #         Output only the ICS content with no extra text.
-                #         For reference, today's date and time is {datetime.now(ZoneInfo('America/New_York'))}.
-                #         """)
-                # response = generate(
-                #     model='4o-mini',
-                #     system= system_message,
-                #     query= query,
-                #     temperature=0.0,
-                #     lastk=20,
-                #     session_id=sess_id
-                # )
-                # ical_content = response['response']
-                # print(ical_content)
+                # Ask for the friend's username
+                system_message = (
+                    "You are an assistant that generates iCalendar (ICS) documents based on previous conversation context. " 
+                    "Your output must be a valid ICS file conforming to RFC 5545, " 
+                    "and include only the ICS content without any additional commentary or explanation. " 
+                    "Ensure you include mandatory fields such as BEGIN:VCALENDAR, VERSION, PRODID, BEGIN:VEVENT, UID, DTSTAMP, " 
+                    "DTSTART, DTEND, and SUMMARY."
+                )
+                query = (f"""
+                        Using the previously generated event summary from our conversation context, generate a complete and valid iCalendar (ICS) document
+                        that reflects the event details.
+                        Name the calendar event based on the activity/place found in the summary.
+                        Set the location of the calendar event to the address of the location in the summary.
+                        Set the time of the calendar event to the time of the hangout, using the current date as reference.
+                        Output only the ICS content with no extra text.
+                        For reference, today's date and time is {datetime.now(ZoneInfo('America/New_York'))}.
+                        """)
+                response = generate(
+                    model='4o-mini',
+                    system= system_message,
+                    query= query,
+                    temperature=0.0,
+                    lastk=20,
+                    session_id=sess_id
+                )
+                ical_content = response['response']
+                print("Generated ICS content:")
+                print(ical_content)
 
-                # # Define the upload URL (same for all uploads)
-                # print(room_id)
-                # upload_url = f"{API_BASE_URL}/rooms.upload/{room_id}"
+                # Define the upload URL (same for all uploads)
+                print("Room ID for file upload:", room_id)
+                upload_url = f"{API_BASE_URL}/rooms.upload/{room_id}"
+                print("Constructed upload URL:", upload_url)
 
-                # # Write the ICS content to a file
-                # ics_filename = "event.ics"
-                # with open(ics_filename, "w") as f:
-                #     f.write(ical_content)
-
-                # # Prepare the file for upload
-                # # For the first user:
-                # with open(ics_filename, 'rb') as ics_file:
-                #     files = {'file': (ics_filename, ics_file, 'text/calendar')}
-                #     data = {'description': 'Your calendar invitation'}
-                #     response = requests.post(upload_url, headers=HEADERS, data=data, files=files)
-                #     if response.status_code == 200:
-                #         print(f"File {ics_filename} has been sent to {confirmed_user}.")
-                #     else:
-                #         print(f"Failed to send file to {confirmed_user}. Error: {response.text}")
-                payload_user = {
-                    "channel": f"@{confirmed_user}",
-                    "text": f"The event has been confirmed with {confirmed_friend}!"
-                }
-                payload_friend = {
-                    "channel": f"@{confirmed_friend}",
-                    "text": f"The event has been confirmed with {confirmed_user}!"
-                }
-
+                # Write the ICS content to a file
+                ics_filename = "event.ics"
+                print(f"Writing ICS content to file: {ics_filename}")
                 try:
-                    response = requests.post(ROCKETCHAT_URL, json=payload_user, headers=HEADERS)
-                    response.raise_for_status()
-                    response_friend = requests.post(ROCKETCHAT_URL, json=payload_friend, headers=HEADERS)
-                    response_friend.raise_for_status()
-
-                    return response.json()
+                    with open(ics_filename, "w") as f:
+                        f.write(ical_content)
+                    print("ICS file written successfully.")
                 except Exception as e:
-                    print(f"An error occurred stating the confirmation: {e}")
-                    return {"error": f"Error: {e}"}
+                    print(f"Error writing ICS file: {e}")
+
+                # Read and print the ICS file contents
+                try:
+                    with open(ics_filename, "r") as f:
+                        file_contents = f.read()
+                    print("ICS file contents:")
+                    print(file_contents)
+                except Exception as e:
+                    print(f"Error reading ICS file: {e}")
+
+
+                # Prepare the file for upload
+                try:
+                    with open(ics_filename, 'rb') as ics_file:
+                        files = {'file': (ics_filename, ics_file, 'text/calendar')}
+                        data = {'description': 'Your calendar invitation'}
+                        print("About to send file upload POST request with data:", data)
+                        print("Headers being used:", HEADERS)
+                        response_upload = requests.post(upload_url, headers=HEADERS, data=data, files=files)
+                        print("File upload response status code:", response_upload.status_code)
+                        print("File upload response text:", response_upload.text)
+                        if response_upload.status_code == 200:
+                            print(f"File {ics_filename} has been sent to {confirmed_user}.")
+                        else:
+                            print(f"Failed to send file to {confirmed_user}. Error: {response_upload.text}")
+                except Exception as e:
+                    print(f"An exception occurred during file upload: {e}")
+                
+                
+                
+                # payload_user = {
+                #     "channel": f"@{confirmed_user}",
+                #     "text": f"The event has been confirmed with {confirmed_friend}!"
+                # }
+                # payload_friend = {
+                #     "channel": f"@{confirmed_friend}",
+                #     "text": f"The event has been confirmed with {confirmed_user}!"
+                # }
+
+                # try:
+                #     response = requests.post(ROCKETCHAT_URL, json=payload_user, headers=HEADERS)
+                #     response.raise_for_status()
+                #     response_friend = requests.post(ROCKETCHAT_URL, json=payload_friend, headers=HEADERS)
+                #     response_friend.raise_for_status()
+
+                #     return response.json()
+                # except Exception as e:
+                #     print(f"An error occurred stating the confirmation: {e}")
+                #     return {"error": f"Error: {e}"}
                 
 
             elif confirmation == "no":
