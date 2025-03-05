@@ -269,12 +269,100 @@ def main():
                     return {"error": f"Error: {e}"}
         return jsonify({"status": "invalid_confirmation"})
     
+    if message.startswith("!calendar"):
+        parts = message.split()
+        if len(parts) >= 4:
+            confirmed_user = parts[1]
+            confirmed_friend = parts[2]
+            confirmation = parts[3]
+
+            friend_sess_id = session_id + confirmed_user
+
+            if confirmation == "yes": #SEND THE ICAL TO BOTH PARTIES
+                # Ask for the friend's username
+                system_message = (
+                    "You are an assistant that generates iCalendar (ICS) documents based on previous conversation context. " 
+                    "Your output must be a valid ICS file conforming to RFC 5545, " 
+                    "and include only the ICS content without any additional commentary or explanation. " 
+                    "Ensure you include mandatory fields such as BEGIN:VCALENDAR, VERSION, PRODID, BEGIN:VEVENT, UID, DTSTAMP, " 
+                    "DTSTART, DTEND, and SUMMARY."
+                    "This is the same calendar event you just generated."
+                )
+                query = (f"""
+                        Repeat the last ical creation:
+                        Using the previously generated event summary from our conversation context, generate a complete and valid iCalendar (ICS) document
+                        that reflects the event details.
+                        Name the calendar event based on the activity/place found in the summary.
+                        Set the location of the calendar event to the address of the location in the summary.
+                        Set the time of the calendar event to the time of the hangout, using the current date as reference.
+                        Output only the ICS content with no extra text.
+                        For reference, today's date and time is {datetime.now(ZoneInfo('America/New_York'))}.
+                        This is the same calendar event you just generated.
+                        """)
+                response = generate(
+                    model='4o-mini',
+                    system= system_message,
+                    query= query,
+                    temperature=0.0,
+                    lastk=20,
+                    session_id=friend_sess_id
+                )
+                ical_content = response['response'].strip()
+                if ical_content.startswith("```") and ical_content.endswith("```"):
+                    ical_content = ical_content[3:-3].strip()
+                print("Generated ICS content:")
+                print(ical_content)
+
+                # Define the upload URL (same for all uploads)
+                print("Room ID for file upload:", room_id)
+                upload_url = f"{API_BASE_URL}/rooms.upload/{room_id}"
+                print("Constructed upload URL:", upload_url)
+
+                # Write the ICS content to a file
+                ics_filename = "event.ics"
+                print(f"Writing ICS content to file: {ics_filename}")
+                try:
+                    with open(ics_filename, "w") as f:
+                        f.write(ical_content)
+                    print("ICS file written successfully.")
+                except Exception as e:
+                    print(f"Error writing ICS file: {e}")
+
+                # Read and print the ICS file contents
+                try:
+                    with open(ics_filename, "r") as f:
+                        file_contents = f.read()
+                    print("ICS file contents:")
+                    print(file_contents)
+                except Exception as e:
+                    print(f"Error reading ICS file: {e}")
+
+
+                # Prepare the file for upload
+                try:
+                    files = {'file': (os.path.basename(ics_filename), open(ics_filename, "rb"), "text/calendar")}
+                    data = {'description': 'Here is a calendar invitation with your plan!'}
+                    print("About to send file upload POST request with data:", data)
+                    print("Headers being used:", HEADERS)
+                    response_upload = requests.post(upload_url, headers=upload_headers, data=data, files=files)
+                    print("File upload response status code:", response_upload.status_code)
+                    print("File upload response text:", response_upload.text)
+                    if response_upload.status_code == 200:
+                        print(f"File {ics_filename} has been sent to {confirmed_user}.")
+                    else:
+                        print(f"Failed to send file to {confirmed_user}. Error: {response_upload.text}")
+                except Exception as e:
+                    print(f"An exception occurred during file upload: {e}")
+
+
     if message.startswith("!final"):
         parts = message.split()
         if len(parts) >= 4:
             confirmed_user = parts[1]
             confirmed_friend = parts[2]
             confirmation = parts[3]
+
+            friend_sess_id = session_id + confirmed_user
 
             if confirmation == "yes": #SEND THE ICAL TO BOTH PARTIES
                 # Ask for the friend's username
@@ -300,7 +388,7 @@ def main():
                     query= query,
                     temperature=0.0,
                     lastk=20,
-                    session_id=sess_id
+                    session_id=friend_sess_id
                 )
                 ical_content = response['response'].strip()
                 if ical_content.startswith("```") and ical_content.endswith("```"):
@@ -350,26 +438,37 @@ def main():
                     print(f"An exception occurred during file upload: {e}")
                 
                 
-                
-                # payload_user = {
-                #     "channel": f"@{confirmed_user}",
-                #     "text": f"The event has been confirmed with {confirmed_friend}!"
-                # }
-                # payload_friend = {
-                #     "channel": f"@{confirmed_friend}",
-                #     "text": f"The event has been confirmed with {confirmed_user}!"
-                # }
+                payload_user = {
+                    "channel": f"@{confirmed_user}",
+                    "text": f"The event has been confirmed!",
+                    "attachments": 
+                        {
+                            "text": "Would you like to download the event to your calendar?",
+                            "actions": [
+                                {
+                                    "type": "button",
+                                    "text": "Add to calendar📅",
+                                    "msg": f"!calendar {confirmed_user} {confirmed_friend} yes",
+                                    "msg_in_chat_window": True
+                                },
+                                {
+                                    "type": "button",
+                                    "text": "❌ No",
+                                    "msg": f"!calendar {confirmed_user} {confirmed_friend} no",
+                                    "msg_in_chat_window": True
+                                }
+                            ]
+                        }
+                }
 
-                # try:
-                #     response = requests.post(ROCKETCHAT_URL, json=payload_user, headers=HEADERS)
-                #     response.raise_for_status()
-                #     response_friend = requests.post(ROCKETCHAT_URL, json=payload_friend, headers=HEADERS)
-                #     response_friend.raise_for_status()
+                try:
+                    response = requests.post(ROCKETCHAT_URL, json=payload_user, headers=HEADERS)
+                    response.raise_for_status()
 
-                #     return response.json()
-                # except Exception as e:
-                #     print(f"An error occurred stating the confirmation: {e}")
-                #     return {"error": f"Error: {e}"}
+                    return response.json()
+                except Exception as e:
+                    print(f"An error occurred stating the confirmation: {e}")
+                    return {"error": f"Error: {e}"}
                 
 
             elif confirmation == "no":
