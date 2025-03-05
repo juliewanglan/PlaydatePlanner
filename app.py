@@ -5,6 +5,8 @@ from llmproxy import generate, pdf_upload
 import os
 import uuid
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
 
 app = Flask(__name__)
 session_id = "4playdatePlanner-"
@@ -275,7 +277,7 @@ def main():
                         Set the time of the calendar event to the time of the hangout.
 
                          Output only the ICS content with no extra text. "
-                        f"For reference, today's date and time is {datetime.now(timezone.est)}."
+                        f"For reference, today's date and time is {datetime.now(ZoneInfo("America/New_York"))}."
                         """)
                 response = generate(
                     model='4o-mini',
