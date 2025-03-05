@@ -157,7 +157,8 @@ def main():
                 system = 'Give human readable text and be friendly',
                 query = (
                     f'''The user has chosen activity number {message.split()[0]}
-                    from the API list. Please generate a summary
+                    from the API list, or the activity list that you generated
+                    in the list just prior. Please generate a summary
                     with information on this activity/place. Please remember this summary
                     going forward.'''
                 ),
@@ -205,9 +206,8 @@ def main():
         # )
         query = (
             """
-            Give the previously generated api call that gives options of activities.
-            You are presenting the list of potential activities to someone else and
-            introducing them.
+            Give the previously generated summary of the plan.
+            You are presenting this summary of the plan to somebody else.
             """
         )
         plan = generate(
@@ -293,11 +293,12 @@ def main():
 
             response = generate(
                 model = '4o-mini',
-                system = 'Be friendly and give human readable text. Please remember this api list.',
+                system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
                 query = (
                     f'''The API call gives a list of potential activities. Please
                     present them as possible activities and format the results
-                    nicely: {api_result.json()}. Please remember this api list.'''
+                    nicely: {api_result.json()}. Please remember the results of this API list.
+                    They will be referred to as they are numbered in the next call.'''
                 ),
                 temperature=0.3,
                 lastk=20,
@@ -312,16 +313,16 @@ def main():
             response_text = "An error occurred while processing your request. Please try again later."
 
         rocketchat_response = send_message_with_buttons(user, response_text)
-    
-    # feed response to location agent and activity agent
-    # agents parse thru the info to get the zipcode and activity
+    else: 
+        # feed response to location agent and activity agent
+        # agents parse thru the info to get the zipcode and activity
 
-    # rocketchat_response = send_message_with_buttons(user, response_text)
-    
-    # Send response back
-    print(response_text)
+        # rocketchat_response = send_message_with_buttons(user, response_text)
+        
+        # Send response back
+        print(response_text)
 
-    return jsonify({"text": response_text})
+        return jsonify({"text": response_text})
     
 #bias=proximity:lon,lat
 def agent_location(query):
