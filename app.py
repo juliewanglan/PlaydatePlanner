@@ -307,35 +307,40 @@ def main():
                 # upload_url = f"{API_BASE_URL}/rooms.upload"
 
 
-                # Define the file name
-                ics_filename = "event.ics"
+                # Define the upload URL (same for all uploads)
+                upload_url = f"{API_BASE_URL}/rooms.upload"
 
+                # Write the ICS content to a file
+                ics_filename = "event.ics"
+                with open(ics_filename, "w") as f:
+                    f.write(ical_content)
+
+                # Prepare the file for upload
+                # For the first user:
                 with open(ics_filename, 'rb') as ics_file:
-                    files = {'file': (ics_filename, ics_file)}
-                    response = requests.post(upload_url, headers=HEADERS, files=files)
+                    files = {'file': (ics_filename, ics_file, 'text/calendar')}
+                    data = {'description': 'Your calendar invitation', 'channel': f"@{confirmed_user}"}
+                    response = requests.post(upload_url, headers=HEADERS, data=data, files=files)
                     if response.status_code == 200:
                         print(f"File {ics_filename} has been sent to {confirmed_user}.")
                     else:
                         print(f"Failed to send file to {confirmed_user}. Error: {response.text}")
 
-                    # Repeat the process for confirmed_friend
-                    upload_url = f"{API_BASE_URL}/rooms.upload/{confirmed_friend}"
-                    with open(ics_filename, 'rb') as ics_file:
-                        files = {'file': (ics_filename, ics_file)}
-                        response = requests.post(upload_url, headers=HEADERS, files=files)
-
+                # For the friend:
+                with open(ics_filename, 'rb') as ics_file:
+                    files = {'file': (ics_filename, ics_file, 'text/calendar')}
+                    data = {'description': 'Your calendar invitation', 'channel': f"@{confirmed_friend}"}
+                    response = requests.post(upload_url, headers=HEADERS, data=data, files=files)
                     if response.status_code == 200:
                         print(f"File {ics_filename} has been sent to {confirmed_friend}.")
                     else:
                         print(f"Failed to send file to {confirmed_friend}. Error: {response.text}")
-
-
-                # response = requests.post(upload_url, headers=HEADERS, data=data, files=files)
-                
-                # if response.status_code == 200:
-                #     print("iCal file sent successfully!")
-                # else:
-                #     print("Error sending iCal file:", response.text)
+                            # response = requests.post(upload_url, headers=HEADERS, data=data, files=files)
+                            
+                            # if response.status_code == 200:
+                            #     print("iCal file sent successfully!")
+                            # else:
+                            #     print("Error sending iCal file:", response.text)
 
             
                 return jsonify({"status": "asked_for_friend_username"})
