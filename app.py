@@ -740,7 +740,7 @@ def main():
     print('MESSAGE BEFORE THE QUERY:', message)
 
     query = (
-        "You are PlaydatePlanner, a friendly assistant helping users plan a hangout. "
+        "You are an aide to make hangout plans, a friendly assistant helping users plan a hangout. "
         "Your goal is to gather three key details: location, date, time (specific), and activity. "
         "Only ask about missing details—do not ask again if the user has already provided something. "
         "If you already remember a location, date, time, or activity and a new detail is entered, override just that detail "
@@ -749,7 +749,7 @@ def main():
         f"This is the user's next message: {message}"
     )
     system = (
-        "You are PlaydatePlanner, a helpful and friendly assistant. "
+        "You are an aide to make hangout plans, a helpful and friendly assistant. "
         "This is an ongoing conversation—do NOT restart it. "
         "Always remember what has already been discussed. "
         "Ask clarifying questions only if required details (location, time, or activity) are missing. "
