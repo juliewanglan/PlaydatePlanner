@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 
 app = Flask(__name__)
-session_id = "5playdatePlanner-"
+session_id = "6havelaydatePlanner-"
 
 # Rocket.Chat API endpoint
 API_BASE_URL = "https://chat.genaiconnect.net/api/v1"
@@ -737,24 +737,26 @@ def main():
         redo_command(message, sess_id)
         print("========REDO COMMAND DONE========")
 
+    print('MESSAGE BEFORE THE QUERY:', message)
+
     query = (
         "You are PlaydatePlanner, a friendly assistant helping users plan a hangout. "
-        "Please use emojis"
         "Your goal is to gather three key details: location, date, time (specific), and activity. "
         "Only ask about missing details—do not ask again if the user has already provided something. "
-        "If you already remember a location, date, time, or activity and a new detail is entered, override just that detail"
+        "If you already remember a location, date, time, or activity and a new detail is entered, override just that detail "
         "Once all details are collected, respond with exactly: 'All necessary details completed:' followed by a summary. "
 
         f"This is the user's next message: {message}"
     )
     system = (
-        "You are PlaydatePlanner, a helpful and friendly assistant. 🎉 "
+        "You are PlaydatePlanner, a helpful and friendly assistant. "
         "This is an ongoing conversation—do NOT restart it. "
         "Always remember what has already been discussed. "
         "Ask clarifying questions only if required details (location, time, or activity) are missing. "
-        "If a new detail is given, forget the original and remember the other details"
+        "If a new detail is given, forget the original and remember the other details "
         "If everything is provided, summarize the plan starting with: 'All necessary details completed:'. "
-        "Do NOT repeat questions unnecessarily."
+        "Do NOT repeat questions unnecessarily. "
+        "Please use emojis"
     )
     print("*********ABOUT TO START QUERY*********")
     # Generate a response using LLMProxy
