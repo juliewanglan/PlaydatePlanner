@@ -258,48 +258,7 @@ def regenerate_summary(sess_id):
     plan_text = plan['response']
     return plan_text
 
-
-@app.route('/', methods=['POST'])
-def hello_world():
-   return jsonify({"text":'Hello from Koyeb - you reached the main page!'})
-
-@app.route('/query', methods=['POST'])
-def main():
-    data = request.get_json() 
-    room_id = data.get("channel_id", "")
-
-    # Extract relevant information
-    user = data.get("user_name", "Unknown")
-    message = data.get("text", "")
-    sess_id = session_id + user
-
-    print(data)
-
-    # Ignore bot messages
-    if data.get("bot") or not message:
-        return jsonify({"status": "ignored"})
-
-    print(f"Message from {user} : {message}")
-
-    intent = agent_detect_intent(message)
-    if intent == "1":
-        send_acitivity_suggestions(user)
-    
-    print("message length", len(message.split()[0]) == 1)
-    print(message.split())
-    if (len(message.split()) == 1) and message.split()[0].isdigit():
-        activity_chosen(message, user, sess_id)
-    if (len(message.split()) == 1) and is_valid_username(message.split()[0]):
-        plan_text = regenerate_summary(sess_id)
-        send_plan_to_friend(message, user, plan_text) 
-        return jsonify({"status": "plan_sent", "friend_username": message})
-
-    # Check if the message is a confirmation response
-    if message.startswith("!confirm"):
-        confirm_command(message)
-        
-    
-    if message.startswith("!calendar"):
+def send_calendar_to_recipient(message, room_id):
         parts = message.split()
         if len(parts) >= 4:
             confirmed_user = parts[1]
@@ -384,250 +343,116 @@ def main():
                 except Exception as e:
                     print(f"An exception occurred during file upload: {e}")
 
-
-    if message.startswith("!final"):
-        parts = message.split()
-        if len(parts) >= 4:
-            confirmed_user = parts[1]
-            confirmed_friend = parts[2]
-            confirmation = parts[3]
-
-            friend_sess_id = session_id + confirmed_user
-
-            if confirmation == "yes": #SEND THE ICAL TO BOTH PARTIES
-                # Ask for the friend's username
-                system_message = (
-                    "You are an assistant that generates iCalendar (ICS) documents based on previous conversation context. " 
-                    "Your output must be a valid ICS file conforming to RFC 5545, " 
-                    "and include only the ICS content without any additional commentary or explanation. " 
-                    "Ensure you include mandatory fields such as BEGIN:VCALENDAR, VERSION, PRODID, BEGIN:VEVENT, UID, DTSTAMP, " 
-                    "DTSTART, DTEND, and SUMMARY."
-                )
-                query = (f"""
-                        Using the previously generated event summary from our conversation context, generate a complete and valid iCalendar (ICS) document
-                        that reflects the event details.
-                        Name the calendar event based on the activity/place found in the summary.
-                        Set the location of the calendar event to the address of the location in the summary.
-                        Set the time of the calendar event to the time of the hangout, using the current date as reference.
-                        Output only the ICS content with no extra text.
-                        For reference, today's date and time is {datetime.now(ZoneInfo('America/New_York'))}.
-                        """)
-                response = generate(
-                    model='4o-mini',
-                    system= system_message,
-                    query= query,
-                    temperature=0.0,
-                    lastk=20,
-                    session_id=friend_sess_id
-                )
-                ical_content = response['response'].strip()
-                if ical_content.startswith("```") and ical_content.endswith("```"):
-                    ical_content = ical_content[3:-3].strip()
-                print("Generated ICS content:")
-                print(ical_content)
-
-                # Define the upload URL (same for all uploads)
-                print("Room ID for file upload:", room_id)
-                upload_url = f"{API_BASE_URL}/rooms.upload/{room_id}"
-                print("Constructed upload URL:", upload_url)
-
-                # Write the ICS content to a file
-                ics_filename = "event.ics"
-                print(f"Writing ICS content to file: {ics_filename}")
-                try:
-                    with open(ics_filename, "w") as f:
-                        f.write(ical_content)
-                    print("ICS file written successfully.")
-                except Exception as e:
-                    print(f"Error writing ICS file: {e}")
-
-                # Read and print the ICS file contents
-                try:
-                    with open(ics_filename, "r") as f:
-                        file_contents = f.read()
-                    print("ICS file contents:")
-                    print(file_contents)
-                except Exception as e:
-                    print(f"Error reading ICS file: {e}")
-
-
-                # Prepare the file for upload
-                try:
-                    files = {'file': (os.path.basename(ics_filename), open(ics_filename, "rb"), "text/calendar")}
-                    data = {'description': 'Here is a calendar invitation with your plan!'}
-                    print("About to send file upload POST request with data:", data)
-                    print("Headers being used:", HEADERS)
-                    response_upload = requests.post(upload_url, headers=upload_headers, data=data, files=files)
-                    print("File upload response status code:", response_upload.status_code)
-                    print("File upload response text:", response_upload.text)
-                    if response_upload.status_code == 200:
-                        print(f"File {ics_filename} has been sent to {confirmed_user}.")
-                    else:
-                        print(f"Failed to send file to {confirmed_user}. Error: {response_upload.text}")
-                except Exception as e:
-                    print(f"An exception occurred during file upload: {e}")
-                
-                
-                payload_user = {
-                    "channel": f"@{confirmed_user}",
-                    "text": f"The event has been confirmed!",
-                    "attachments": [
-                        {
-                            "text": "Would you like to download the event to your calendar?",
-                            "actions": [
-                                {
-                                    "type": "button",
-                                    "text": "Add to calendar📅",
-                                    "msg": f"!calendar {confirmed_user} {confirmed_friend} yes",
-                                    "msg_in_chat_window": True
-                                },
-                                {
-                                    "type": "button",
-                                    "text": "❌ No",
-                                    "msg": f"!calendar {confirmed_user} {confirmed_friend} no",
-                                    "msg_in_chat_window": True
-                                }
-                            ]
-                        }
-                ]
-
-                }
-
-                try:
-                    response = requests.post(ROCKETCHAT_URL, json=payload_user, headers=HEADERS)
-                    response.raise_for_status()
-
-                    return response.json()
-                except Exception as e:
-                    print(f"An error occurred stating the confirmation: {e}")
-                    return {"error": f"Error: {e}"}
-                
-
-            elif confirmation == "no":
-                payload_user = {
-                    "channel": f"@{confirmed_user}",
-                    "text": f"The event was cancelled with {confirmed_friend}!"
-                }
-                payload_friend = {
-                    "channel": f"@{confirmed_friend}",
-                    "text": f"The event was cancelled with {confirmed_user}!"
-                }
-
-                try:
-                    response = requests.post(ROCKETCHAT_URL, json=payload_user, headers=HEADERS)
-                    response.raise_for_status()
-                    response_friend = requests.post(ROCKETCHAT_URL, json=payload_friend, headers=HEADERS)
-                    response_friend.raise_for_status()
-
-                    return response.json()
-                except Exception as e:
-                    print(f"An error occurred rejecting the confirmation: {e}")
-                    return {"error": f"Error: {e}"}
-
-                return jsonify({"status": "confirmation_denied"})
-        return jsonify({"status": "invalid_confirmation"})
-
-    if message.startswith("!redo"): 
-        parts = message.split()
+def send_calendar_to_planner(message, room_id):
+    parts = message.split()
+    if len(parts) >= 4:
         confirmed_user = parts[1]
-        command_type = parts[2]
-        if len(parts) < 3:
-            return {"error": "Invalid command format. Use `!redo username radius` or `!redo username activity`"}
+        confirmed_friend = parts[2]
+        confirmation = parts[3]
 
-        
-        if command_type == "radius":
-            print(f"Increasing search radius and redoing API call...")
-            try: 
-                response = generate(
-                    model = '4o-mini',
-                    system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
-                    query = (
-                        '''What was the previous message generated in chat'''
-                    ),
-                    temperature=0.3,
-                    lastk=5,
-                    session_id=sess_id
-                )
-                response_text = response['response']
-                print('LAST MESSAGE WAS: ', response_text)
-                activity = agent_activity(response_text)
-                location = agent_location(response_text)
+        friend_sess_id = session_id + confirmed_user
 
-                params = {
-                    "category": activity,
-                    "bias": location,
-                    "limit":10,
-                    "apiKey":os.environ.get("geoapifyApiKey")
-                }
+        if confirmation == "yes": #SEND THE ICAL TO BOTH PARTIES
+            # Ask for the friend's username
+            system_message = (
+                "You are an assistant that generates iCalendar (ICS) documents based on previous conversation context. " 
+                "Your output must be a valid ICS file conforming to RFC 5545, " 
+                "and include only the ICS content without any additional commentary or explanation. " 
+                "Ensure you include mandatory fields such as BEGIN:VCALENDAR, VERSION, PRODID, BEGIN:VEVENT, UID, DTSTAMP, " 
+                "DTSTART, DTEND, and SUMMARY."
+            )
+            query = (f"""
+                    Using the previously generated event summary from our conversation context, generate a complete and valid iCalendar (ICS) document
+                    that reflects the event details.
+                    Name the calendar event based on the activity/place found in the summary.
+                    Set the location of the calendar event to the address of the location in the summary.
+                    Set the time of the calendar event to the time of the hangout, using the current date as reference.
+                    Output only the ICS content with no extra text.
+                    For reference, today's date and time is {datetime.now(ZoneInfo('America/New_York'))}.
+                    """)
+            response = generate(
+                model='4o-mini',
+                system= system_message,
+                query= query,
+                temperature=0.0,
+                lastk=20,
+                session_id=friend_sess_id
+            )
+            ical_content = response['response'].strip()
+            if ical_content.startswith("```") and ical_content.endswith("```"):
+                ical_content = ical_content[3:-3].strip()
+            print("Generated ICS content:")
+            print(ical_content)
 
-                url = f"https://api.geoapify.com/v2/places?categories={params['category']}&filter=circle:{params['bias']},16093&limit=10&apiKey={params['apiKey']}"
-                api_result = requests.get(url)
-                print(url)
-                if api_result.status_code == 200:
-                    data_api = api_result.json()
-                    print('THIS IS THE API RESULT.JSON: ', data_api)
-                    if data.features.length == 0:
-                        print("No features generated by the API.")
-                        payload = {
-                            "channel": f"@{user}",
-                            "text": response_text,
-                            "attachments": [
-                                {
-                                    "text": "No options were found, would you like to try a new activity?",
-                                    "actions": [
-                                        {
-                                            "type": "button",
-                                            "text": "🆕 Activity",
-                                            "msg": f"!redo {user} activity",
-                                            "msg_in_chat_window": True
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                        try:
-                            # Send the message with buttons to Rocket.Chat
-                            response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-                            response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
-                            return response.json()  # Return the JSON response if successful
-                        except Exception as e:
-                            # Handle any other unexpected errors
-                            return {"error": f"Unexpected error: {e}"}
+            # Define the upload URL (same for all uploads)
+            print("Room ID for file upload:", room_id)
+            upload_url = f"{API_BASE_URL}/rooms.upload/{room_id}"
+            print("Constructed upload URL:", upload_url)
 
-                    print("Geoapify API response:", data_api)
-                else:
-                    print("Error calling Geoapify API")
-
-                response = generate(
-                    model = '4o-mini',
-                    system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
-                    query = (
-                        f'''The following list of activities was generated based on an API call: {api_result.json()}.
-                        For clarity and future reference, please present them as numbered options.
-                        In subsequent requests, refer to these numbers for any follow-up actions.'''
-                    ),
-                    temperature=0.3,
-                    lastk=20,
-                    session_id=sess_id
-                )
-                response_text = response['response']
-                print('LIST OF PLACES GENERATED')
-                print(response_text)
-
-                rocketchat_response = send_message_with_buttons(user, response_text)
-            except Exception as e:
-                # Log the error and update response_text with a generic error message
-                print(f"An error occurred: {e}")
-                response_text = "An error occurred while processing your request. Please try again later."
-        
-
-        elif command_type == "activity":
-            payload = {
-                    "channel": f"@{confirmed_user}",
-                    "text": f"Give a new activity"
-            }
+            # Write the ICS content to a file
+            ics_filename = "event.ics"
+            print(f"Writing ICS content to file: {ics_filename}")
             try:
-                response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+                with open(ics_filename, "w") as f:
+                    f.write(ical_content)
+                print("ICS file written successfully.")
+            except Exception as e:
+                print(f"Error writing ICS file: {e}")
+
+            # Read and print the ICS file contents
+            try:
+                with open(ics_filename, "r") as f:
+                    file_contents = f.read()
+                print("ICS file contents:")
+                print(file_contents)
+            except Exception as e:
+                print(f"Error reading ICS file: {e}")
+
+
+            # Prepare the file for upload
+            try:
+                files = {'file': (os.path.basename(ics_filename), open(ics_filename, "rb"), "text/calendar")}
+                data = {'description': 'Here is a calendar invitation with your plan!'}
+                print("About to send file upload POST request with data:", data)
+                print("Headers being used:", HEADERS)
+                response_upload = requests.post(upload_url, headers=upload_headers, data=data, files=files)
+                print("File upload response status code:", response_upload.status_code)
+                print("File upload response text:", response_upload.text)
+                if response_upload.status_code == 200:
+                    print(f"File {ics_filename} has been sent to {confirmed_user}.")
+                else:
+                    print(f"Failed to send file to {confirmed_user}. Error: {response_upload.text}")
+            except Exception as e:
+                print(f"An exception occurred during file upload: {e}")
+            
+            
+            payload_user = {
+                "channel": f"@{confirmed_user}",
+                "text": f"The event has been confirmed!",
+                "attachments": [
+                    {
+                        "text": "Would you like to download the event to your calendar?",
+                        "actions": [
+                            {
+                                "type": "button",
+                                "text": "Add to calendar📅",
+                                "msg": f"!calendar {confirmed_user} {confirmed_friend} yes",
+                                "msg_in_chat_window": True
+                            },
+                            {
+                                "type": "button",
+                                "text": "❌ No",
+                                "msg": f"!calendar {confirmed_user} {confirmed_friend} no",
+                                "msg_in_chat_window": True
+                            }
+                        ]
+                    }
+            ]
+
+            }
+
+            try:
+                response = requests.post(ROCKETCHAT_URL, json=payload_user, headers=HEADERS)
                 response.raise_for_status()
 
                 return response.json()
@@ -635,74 +460,139 @@ def main():
                 print(f"An error occurred stating the confirmation: {e}")
                 return {"error": f"Error: {e}"}
             
-            # query = (
-            #     "You are PlaydatePlanner, a friendly assistant helping users plan a hangout. "
-            #     "Please use emojis"
-            #     "You already have these details: location, date, time (specific)"
-            #     "A new activity is going to be given in the next user message, please remember this."
-            #     f"This is the user's next message: {message}"
-            # )
-            # system = (
-            #     "You are PlaydatePlanner, a helpful and friendly assistant. 🎉 "
-            #     "This is an ongoing conversation—do NOT restart it. "
-            #     "Always remember what has already been discussed. "
-            #     "Do NOT repeat questions unnecessarily."
-            # )
 
-            # # Generate a response using LLMProxy
-            # response = generate(
-            #     model='4o-mini',
-            #     system=system,
-            #     query= query,
-            #     temperature=0.0,
-            #     lastk=20,
-            #     session_id=sess_id
-            # )
+        elif confirmation == "no":
+            payload_user = {
+                "channel": f"@{confirmed_user}",
+                "text": f"The event was cancelled with {confirmed_friend}!"
+            }
+            payload_friend = {
+                "channel": f"@{confirmed_friend}",
+                "text": f"The event was cancelled with {confirmed_user}!"
+            }
 
-            # response_text = response['response']
+            try:
+                response = requests.post(ROCKETCHAT_URL, json=payload_user, headers=HEADERS)
+                response.raise_for_status()
+                response_friend = requests.post(ROCKETCHAT_URL, json=payload_friend, headers=HEADERS)
+                response_friend.raise_for_status()
 
-            print("Fetching a new activity...")
-            
-        else:
-            return {"error": "Invalid option. Use `radius` to expand the search or `activity` to try a new one."}
+                return response.json()
+            except Exception as e:
+                print(f"An error occurred rejecting the confirmation: {e}")
+                return {"error": f"Error: {e}"}
 
+def redo_command(message, sess_id):
+    parts = message.split()
+    confirmed_user = parts[1]
+    command_type = parts[2]
+    if len(parts) < 3:
+        return {"error": "Invalid command format. Use `!redo username radius` or `!redo username activity`"}
 
+    if command_type == "radius":
+        print(f"Increasing search radius and redoing API call...")
+        try: 
+            response = generate(
+                model = '4o-mini',
+                system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
+                query = (
+                    '''What was the previous message generated in chat'''
+                ),
+                temperature=0.3,
+                lastk=5,
+                session_id=sess_id
+            )
+            response_text = response['response']
+            print('LAST MESSAGE WAS: ', response_text)
+            activity = agent_activity(response_text)
+            location = agent_location(response_text)
 
-    query = (
-        "You are PlaydatePlanner, a friendly assistant helping users plan a hangout. "
-        "Please use emojis"
-        "Your goal is to gather three key details: location, date, time (specific), and activity. "
-        "Only ask about missing details—do not ask again if the user has already provided something. "
-        "If you already remember a location, date, time, or activity and a new detail is entered, override just that detail"
-        "Once all details are collected, respond with exactly: 'All necessary details completed:' followed by a summary. "
+            params = {
+                "category": activity,
+                "bias": location,
+                "limit":10,
+                "apiKey":os.environ.get("geoapifyApiKey")
+            }
 
-        f"This is the user's next message: {message}"
-    )
-    system = (
-        "You are PlaydatePlanner, a helpful and friendly assistant. 🎉 "
-        "This is an ongoing conversation—do NOT restart it. "
-        "Always remember what has already been discussed. "
-        "Ask clarifying questions only if required details (location, time, or activity) are missing. "
-        "If a new detail is given, forget the original and remember the other details"
-        "If everything is provided, summarize the plan starting with: 'All necessary details completed:'. "
-        "Do NOT repeat questions unnecessarily."
-    )
+            url = f"https://api.geoapify.com/v2/places?categories={params['category']}&filter=circle:{params['bias']},16093&limit=10&apiKey={params['apiKey']}"
+            api_result = requests.get(url)
+            print(url)
+            if api_result.status_code == 200:
+                data_api = api_result.json()
+                print('THIS IS THE API RESULT.JSON: ', data_api)
+                if data.features.length == 0:
+                    print("No features generated by the API.")
+                    payload = {
+                        "channel": f"@{user}",
+                        "text": response_text,
+                        "attachments": [
+                            {
+                                "text": "No options were found, would you like to try a new activity?",
+                                "actions": [
+                                    {
+                                        "type": "button",
+                                        "text": "🆕 Activity",
+                                        "msg": f"!redo {user} activity",
+                                        "msg_in_chat_window": True
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                    try:
+                        # Send the message with buttons to Rocket.Chat
+                        response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+                        response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
+                        return response.json()  # Return the JSON response if successful
+                    except Exception as e:
+                        # Handle any other unexpected errors
+                        return {"error": f"Unexpected error: {e}"}
 
-    # Generate a response using LLMProxy
-    response = generate(
-        model='4o-mini',
-        system=system,
-        query= query,
-        temperature=0.0,
-        lastk=20,
-        session_id=sess_id
-    )
+                print("Geoapify API response:", data_api)
+            else:
+                print("Error calling Geoapify API")
 
-    response_text = response['response']
+            response = generate(
+                model = '4o-mini',
+                system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
+                query = (
+                    f'''The following list of activities was generated based on an API call: {api_result.json()}.
+                    For clarity and future reference, please present them as numbered options.
+                    In subsequent requests, refer to these numbers for any follow-up actions.'''
+                ),
+                temperature=0.3,
+                lastk=20,
+                session_id=sess_id
+            )
+            response_text = response['response']
+            print('LIST OF PLACES GENERATED')
+            print(response_text)
 
-    print(sess_id)
+            rocketchat_response = send_message_with_buttons(user, response_text)
+        except Exception as e:
+            # Log the error and update response_text with a generic error message
+            print(f"An error occurred: {e}")
+            response_text = "An error occurred while processing your request. Please try again later."
 
-    if "All necessary details completed" in response_text:
+    elif command_type == "activity":
+        payload = {
+                "channel": f"@{confirmed_user}",
+                "text": f"Give a new activity"
+        }
+        try:
+            response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+            response.raise_for_status()
+
+            return response.json()
+        except Exception as e:
+            print(f"An error occurred stating the confirmation: {e}")
+            return {"error": f"Error: {e}"}
+        print("Fetching a new activity...")
+    
+    else:
+        return {"error": "Invalid option. Use `radius` to expand the search or `activity` to try a new one."}
+
+def details_complete(user, sess_id):
         print("ALL NECESSARY DETAILS")
         try: 
             activity = agent_activity(response_text)
@@ -780,16 +670,113 @@ def main():
             # Log the error and update response_text with a generic error message
             print(f"An error occurred: {e}")
             response_text = "An error occurred while processing your request. Please try again later."
+
+@app.route('/', methods=['POST'])
+def hello_world():
+   return jsonify({"text":'Hello from Koyeb - you reached the main page!'})
+
+@app.route('/query', methods=['POST'])
+def main():
+    data = request.get_json() 
+    room_id = data.get("channel_id", "")
+
+    # Extract relevant information
+    user = data.get("user_name", "Unknown")
+    message = data.get("text", "")
+    sess_id = session_id + user
+
+    print(data)
+
+    # Ignore bot messages
+    if data.get("bot") or not message:
+        return jsonify({"status": "ignored"})
+
+    print(f"Message from {user} : {message}")
+
+    intent = agent_detect_intent(message)
+    if intent == "1":
+        print("========SEND_ACTIVITY_SUGGESTIONS START========")
+        send_acitivity_suggestions(user)
+        print("========SEND_ACTIVITY_SUGGESTIONS DONE========")
+    
+    print("message length", len(message.split()[0]) == 1)
+    print(message.split())
+    if (len(message.split()) == 1) and message.split()[0].isdigit():
+        print("========ACTIVITY_CHOSEN START========")
+        activity_chosen(message, user, sess_id)
+        print("========ACTIVITY_CHOSEN DONE========")
+    if (len(message.split()) == 1) and is_valid_username(message.split()[0]):
+        print("========REGENERATE_SUMMARY START========")
+        plan_text = regenerate_summary(sess_id)
+        print("========REGENERATE_SUMMARY DONE========")
+        print("========SEND_PLAN_TO_FRIEND START========")
+        send_plan_to_friend(message, user, plan_text) 
+        print("========SEND_PLAN_TO_FRIEND DONE========")
+        return jsonify({"status": "plan_sent", "friend_username": message})
+
+    # Check if the message is a confirmation response
+    if message.startswith("!confirm"):
+        print("========CONFIRM_COMMAND START========")
+        confirm_command(message)
+        print("========CONFIRM_COMMAND DONE========")
         
+    if message.startswith("!calendar"):
+        print("========CALENDAR COMMAND START========")
+        send_calendar_to_recipient(message, room_id)
+        print("========CALENDAR COMMAND DONE========")
+        
+
+    if message.startswith("!final"):
+        print("========SEND CALENDAR TO PLANNER FINAL COMMAND START ========")
+        send_calendar_to_planner(message, room_id)
+        print("========SEND CALENDAR TO PLANNER FINAL COMMAND DONE ========")
+        return jsonify({"status": "valid_confirmation"})
+
+    if message.startswith("!redo"): 
+        print("========REDO COMMAND START========")
+        redo_command(message, sess_id)
+        print("========REDO COMMAND DONE========")
+
+    query = (
+        "You are PlaydatePlanner, a friendly assistant helping users plan a hangout. "
+        "Please use emojis"
+        "Your goal is to gather three key details: location, date, time (specific), and activity. "
+        "Only ask about missing details—do not ask again if the user has already provided something. "
+        "If you already remember a location, date, time, or activity and a new detail is entered, override just that detail"
+        "Once all details are collected, respond with exactly: 'All necessary details completed:' followed by a summary. "
+
+        f"This is the user's next message: {message}"
+    )
+    system = (
+        "You are PlaydatePlanner, a helpful and friendly assistant. 🎉 "
+        "This is an ongoing conversation—do NOT restart it. "
+        "Always remember what has already been discussed. "
+        "Ask clarifying questions only if required details (location, time, or activity) are missing. "
+        "If a new detail is given, forget the original and remember the other details"
+        "If everything is provided, summarize the plan starting with: 'All necessary details completed:'. "
+        "Do NOT repeat questions unnecessarily."
+    )
+    print("*********ABOUT TO START QUERY*********")
+    # Generate a response using LLMProxy
+    response = generate(
+        model='4o-mini',
+        system=system,
+        query= query,
+        temperature=0.0,
+        lastk=20,
+        session_id=sess_id
+    )
+    print("*********QUERY FINISHED*********")
+    response_text = response['response']
+    print("RESPONSE TEXT: ", response_text)
+    print(sess_id)
+
+    if "All necessary details completed" in response_text:
+        print("========DETAILS_COMPLETE STARTED========")
+        details_complete(user, sess_id)   
+        print("========DETAILS_COMPLETE COMMAND DONE========")     
     else: 
-        # feed response to location agent and activity agent
-        # agents parse thru the info to get the zipcode and activity
-
-        # rocketchat_response = send_message_with_buttons(user, response_text)
-        
-        # Send response back
         print(response_text)
-
         return jsonify({"text": response_text})
 
 #bias=proximity:lon,lat
