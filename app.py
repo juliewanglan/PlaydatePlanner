@@ -160,7 +160,33 @@ def main():
     intent = agent_detect_intent(message)
     if intent == "1":
         suggestions = ["restaurant", "cafe", "museum", "movie", "park"]
+        payload = {
+            "channel": f"@{user}",
+            "text": "Here are some activity suggestions for you:",
+            "attachments": [
+                {
+                    "text": "Please choose one of the following activities:",
+                    "actions": [
+                        {
+                            "type": "button",
+                            "text": f"{idx+1}. {suggestion}",
+                            "msg": f"The activity category chosen is: {suggestion}",
+                            "msg_in_chat_window": True
+                        } for idx, suggestion in enumerate(suggestions)
+                    ]
+                }
+            ]
+        }
+        try:
+            response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+            response.raise_for_status()
+            print(f"Sent activity suggestion buttons to {user}.")
+            return response.json()
+        except Exception as e:
+            print(f"Error sending activity suggestions: {e}")
+            return {"error": f"Unexpected error: {e}"}
 
+    
     print("message length", len(message.split()[0]) == 1)
     print(message.split())
     if (len(message.split()) == 1) and message.split()[0].isdigit():
