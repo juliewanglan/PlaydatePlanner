@@ -878,12 +878,18 @@ def agent_detect_intent(query):
     "1": message includes a request for suggestions
     "2": all other messages
     '''
+    query = (f"""
+                You are an intent detection assistant. Analyze the following message: {query}.
+                Respond with a single number and just a single number. Respond with '1'
+                if the user is asking for suggestions for an activity. Otherwise, return '2'.
+                If the user is stating na activity and not asking for a recommendation, return '2'.
+            """)
     intent_response = generate(
         model='4o-mini',
         system=(
             "You are an intent detection assistant. "
             "Analyze the following user message and return a single number: "
-            "return '1' if the user is asking for activity suggestions, and '2' otherwise."
+            "return '1' if the user is asking for activity suggestions, and '2' otherwise."            
         ),
         query=query,
         temperature=0.0,
