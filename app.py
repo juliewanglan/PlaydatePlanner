@@ -134,31 +134,7 @@ def send_plan_to_friend(friend_username, username, plan_text):
         print(f"An unexpected error occurred while sending message to {username}: {e}")
         return {"error": f"Unexpected error: {e}"}
 
-
-@app.route('/', methods=['POST'])
-def hello_world():
-   return jsonify({"text":'Hello from Koyeb - you reached the main page!'})
-
-@app.route('/query', methods=['POST'])
-def main():
-    data = request.get_json() 
-    room_id = data.get("channel_id", "")
-
-    # Extract relevant information
-    user = data.get("user_name", "Unknown")
-    message = data.get("text", "")
-    sess_id = session_id + user
-
-    print(data)
-
-    # Ignore bot messages
-    if data.get("bot") or not message:
-        return jsonify({"status": "ignored"})
-
-    print(f"Message from {user} : {message}")
-
-    intent = agent_detect_intent(message)
-    if intent == "1":
+def send_acitivity_suggestions(user):
         suggestions = ["restaurant", "cafe", "museum", "movie", "park"]
         payload = {
             "channel": f"@{user}",
@@ -186,118 +162,142 @@ def main():
             print(f"Error sending activity suggestions: {e}")
             return {"error": f"Unexpected error: {e}"}
 
+def confirm_command(message):
+    parts = message.split()
+    if len(parts) >= 3:
+        confirmed_user = parts[1]
+        confirmation = parts[2]
+
+        if confirmation == "yes":
+            # Ask for the friend's username
+            ask_for_friend_username(confirmed_user)
+            return jsonify({"status": "asked_for_friend_username"})
+        elif confirmation == "no":
+            payload = {
+                "channel": f"@{confirmed_user}",
+                "text": f"The event has been canceled. Please try again!"
+            }
+            try:
+                response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+                response.raise_for_status()
+
+                return response.json()
+            except Exception as e:
+                print(f"An error occurred stating the confirmation: {e}")
+                return {"error": f"Error: {e}"}
+    return jsonify({"status": "invalid_confirmation"})
+
+def activity_chosen(message, user, sess_id):
+    response = generate(
+        model = '4o-mini',
+        system = 'Give human readable text and be friendly',
+        query = (
+            f"""There is a previously generated API list of activities.
+            The user selected activity number {message.split()[0]} from that list.
+            Please provide a detailed, human-readable summary of this activity or place, including key details.
+            **Only** include the numbered place.
+            In this summary, pleae also include the previously discussed time.
+            Make sure to retain this summary in our session context for future reference."""                    
+        ),
+        # Please provide a detailed, human-readable summary of this activity or place, including key details such as location, features, and highlights.
+        #     Make sure to retain this summary in our session context for future reference.
+        temperature=0.3,
+        lastk=20,
+        session_id=sess_id
+    )
+    response_text = response['response']
+
+    payload = {
+        "channel": f"@{user}",
+        "text": response_text,
+        "attachments": [
+            {
+                "text": "Do you like this plan?",
+                "actions": [
+                    {
+                        "type": "button",
+                        "text": "✅ Yes",
+                        "msg": f"!confirm {user} yes",
+                        "msg_in_chat_window": True
+                    },
+                    {
+                        "type": "button",
+                        "text": "❌ No",
+                        "msg": f"!confirm {user} no",
+                        "msg_in_chat_window": True
+                    }
+                ]
+            }
+        ]
+    }
+    try:
+        # Send the message with buttons to Rocket.Chat
+        response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+        response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
+        return response.json()  # Return the JSON response if successful
+    except Exception as e:
+        # Handle any other unexpected errors
+        return {"error": f"Unexpected error: {e}"}
+def regenerate_summary(sess_id):
+    print("MESSAGE LENGTH IS 1")
+    print("VALID USERNAME")
+    query = (
+        """
+        Give the previously generated summary of the plan.
+        You are presenting this summary of the plan to somebody else.
+        """
+    )
+    plan = generate(
+        model='4o-mini',
+        system="List the options clearly",
+        query= query,
+        temperature=0.0,
+        lastk=20,
+        session_id=sess_id
+    )
+    plan_text = plan['response']
+    return plan_text
+
+
+@app.route('/', methods=['POST'])
+def hello_world():
+   return jsonify({"text":'Hello from Koyeb - you reached the main page!'})
+
+@app.route('/query', methods=['POST'])
+def main():
+    data = request.get_json() 
+    room_id = data.get("channel_id", "")
+
+    # Extract relevant information
+    user = data.get("user_name", "Unknown")
+    message = data.get("text", "")
+    sess_id = session_id + user
+
+    print(data)
+
+    # Ignore bot messages
+    if data.get("bot") or not message:
+        return jsonify({"status": "ignored"})
+
+    print(f"Message from {user} : {message}")
+
+    intent = agent_detect_intent(message)
+    if intent == "1":
+        send_acitivity_suggestions(user)
     
     print("message length", len(message.split()[0]) == 1)
     print(message.split())
     if (len(message.split()) == 1) and message.split()[0].isdigit():
-        response = generate(
-                model = '4o-mini',
-                system = 'Give human readable text and be friendly',
-                query = (
-                    f"""There is a previously generated API list of activities.
-                    The user selected activity number {message.split()[0]} from that list.
-                    Please provide a detailed, human-readable summary of this activity or place, including key details.
-                    **Only** include the numbered place.
-                    In this summary, pleae also include the previously discussed time.
-                    Make sure to retain this summary in our session context for future reference."""                    
-                ),
-                # Please provide a detailed, human-readable summary of this activity or place, including key details such as location, features, and highlights.
-                #     Make sure to retain this summary in our session context for future reference.
-                temperature=0.3,
-                lastk=20,
-                session_id=sess_id
-
-            )
-        response_text = response['response']
-
-        payload = {
-            "channel": f"@{user}",
-            "text": response_text,
-            "attachments": [
-                {
-                    "text": "Do you like this plan?",
-                    "actions": [
-                        {
-                            "type": "button",
-                            "text": "✅ Yes",
-                            "msg": f"!confirm {user} yes",
-                            "msg_in_chat_window": True
-                        },
-                        {
-                            "type": "button",
-                            "text": "❌ No",
-                            "msg": f"!confirm {user} no",
-                            "msg_in_chat_window": True
-                        }
-                    ]
-                }
-            ]
-        }
-        try:
-            # Send the message with buttons to Rocket.Chat
-            response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-            response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
-            return response.json()  # Return the JSON response if successful
-        except Exception as e:
-            # Handle any other unexpected errors
-            return {"error": f"Unexpected error: {e}"}
-
-
+        activity_chosen(message, user, sess_id)
     if (len(message.split()) == 1) and is_valid_username(message.split()[0]):
-        print("MESSAGE LENGTH IS 1")
-        print("VALID USERNAME")
-
-
-        # query = (
-        #     """
-        #     You are now presenting this plan to the user's friend. Summarize the
-        #     plan and present it to the friend.
-        #     """
-        # )
-        query = (
-            """
-            Give the previously generated summary of the plan.
-            You are presenting this summary of the plan to somebody else.
-            """
-        )
-        plan = generate(
-            model='4o-mini',
-            system="List the options clearly",
-            query= query,
-            temperature=0.0,
-            lastk=20,
-            session_id=sess_id
-        )
-        plan_text = plan['response']
+        plan_text = regenerate_summary(sess_id)
         send_plan_to_friend(message, user, plan_text) 
         return jsonify({"status": "plan_sent", "friend_username": message})
 
-
     # Check if the message is a confirmation response
     if message.startswith("!confirm"):
-        parts = message.split()
-        if len(parts) >= 3:
-            confirmed_user = parts[1]
-            confirmation = parts[2]
-
-            if confirmation == "yes":
-                # Ask for the friend's username
-                ask_for_friend_username(confirmed_user)
-                return jsonify({"status": "asked_for_friend_username"})
-            elif confirmation == "no":
-                payload = {
-                    "channel": f"@{confirmed_user}",
-                    "text": f"The event has been canceled. Please try again!"
-                }
-                try:
-                    response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-                    response.raise_for_status()
-
-                    return response.json()
-                except Exception as e:
-                    print(f"An error occurred stating the confirmation: {e}")
-                    return {"error": f"Error: {e}"}
-        return jsonify({"status": "invalid_confirmation"})
+        confirm_command(message)
+        
     
     if message.startswith("!calendar"):
         parts = message.split()
