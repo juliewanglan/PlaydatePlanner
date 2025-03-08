@@ -157,6 +157,10 @@ def main():
 
     print(f"Message from {user} : {message}")
 
+    intent = agent_detect_intent(message)
+    if intent == "1":
+        suggestions = ["restaurant", "cafe", "museum", "movie", "park"]
+
     print("message length", len(message.split()[0]) == 1)
     print(message.split())
     if (len(message.split()) == 1) and message.split()[0].isdigit():
@@ -499,10 +503,11 @@ def main():
 
     if message.startswith("!redo"): 
         parts = message.split()
+        confirmed_user = parts[1]
+        command_type = parts[2]
         if len(parts) < 3:
             return {"error": "Invalid command format. Use `!redo username radius` or `!redo username activity`"}
 
-        command_type = parts[2]  # Extract the second argument after "!redo"
         
         if command_type == "radius":
             print(f"Increasing search radius and redoing API call...")
@@ -591,6 +596,45 @@ def main():
         
 
         elif command_type == "activity":
+            payload = {
+                    "channel": f"@{confirmed_user}",
+                    "text": f"Give a new activity"
+            }
+            try:
+                response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+                response.raise_for_status()
+
+                return response.json()
+            except Exception as e:
+                print(f"An error occurred stating the confirmation: {e}")
+                return {"error": f"Error: {e}"}
+            
+            # query = (
+            #     "You are PlaydatePlanner, a friendly assistant helping users plan a hangout. "
+            #     "Please use emojis"
+            #     "You already have these details: location, date, time (specific)"
+            #     "A new activity is going to be given in the next user message, please remember this."
+            #     f"This is the user's next message: {message}"
+            # )
+            # system = (
+            #     "You are PlaydatePlanner, a helpful and friendly assistant. 🎉 "
+            #     "This is an ongoing conversation—do NOT restart it. "
+            #     "Always remember what has already been discussed. "
+            #     "Do NOT repeat questions unnecessarily."
+            # )
+
+            # # Generate a response using LLMProxy
+            # response = generate(
+            #     model='4o-mini',
+            #     system=system,
+            #     query= query,
+            #     temperature=0.0,
+            #     lastk=20,
+            #     session_id=sess_id
+            # )
+
+            # response_text = response['response']
+
             print("Fetching a new activity...")
             
         else:
@@ -603,6 +647,7 @@ def main():
         "Please use emojis"
         "Your goal is to gather three key details: location, date, time (specific), and activity. "
         "Only ask about missing details—do not ask again if the user has already provided something. "
+        "If you already remember a location, date, time, or activity and a new detail is entered, override just that detail"
         "Once all details are collected, respond with exactly: 'All necessary details completed:' followed by a summary. "
 
         f"This is the user's next message: {message}"
@@ -612,6 +657,7 @@ def main():
         "This is an ongoing conversation—do NOT restart it. "
         "Always remember what has already been discussed. "
         "Ask clarifying questions only if required details (location, time, or activity) are missing. "
+        "If a new detail is given, forget the original and remember the other details"
         "If everything is provided, summarize the plan starting with: 'All necessary details completed:'. "
         "Do NOT repeat questions unnecessarily."
     )
@@ -719,13 +765,6 @@ def main():
         print(response_text)
 
         return jsonify({"text": response_text})
-    
-def agent_detect_intent(query):
-    '''
-    Uses LLM to detect intent.
-    "1": message includes a request for suggestions
-    "2": all other messages
-    '''
 
 #bias=proximity:lon,lat
 def agent_location(query):
@@ -791,35 +830,6 @@ def agent_activity(message):
         commercial.outdoor_and_sport.golf, commercial.clothing.sport, commercial.marketplace,
         commercial.shopping_mall, commercial.department_store, commercial.clothing,
         commercial.clothing.accessories, commercial.gift_and_souvenir, commercial.bag, commercial.jewelry,
-        commercial.watches, commercial.art, commercial.antiques, commercial.video_and_music,
-        catering.restaurant.pizza, catering.restaurant.burger, catering.restaurant.regional,
-        catering.restaurant.italian, catering.restaurant.chinese, catering.restaurant.sandwich,
-        catering.restaurant.chicken, catering.restaurant.mexican, catering.restaurant.japanese,
-        catering.restaurant.american, catering.restaurant.kebab, catering.restaurant.indian,
-        catering.restaurant.asian, catering.restaurant.sushi, catering.restaurant.french,
-        catering.restaurant.german, catering.restaurant.thai, catering.restaurant.greek,
-        catering.restaurant.seafood, catering.restaurant.fish_and_chips, catering.restaurant.steak_house,
-        catering.restaurant.international, catering.restaurant.tex-mex, catering.restaurant.vietnamese,
-        catering.restaurant.turkish, catering.restaurant.korean, catering.restaurant.noodle,
-        catering.restaurant.barbecue, catering.restaurant.spanish, catering.restaurant.fish,
-        catering.restaurant.ramen, catering.restaurant.mediterranean, catering.restaurant.friture,
-        catering.restaurant.beef_bowl, catering.restaurant.lebanese, catering.restaurant.wings,
-        catering.restaurant.georgian, catering.restaurant.tapas, catering.restaurant.indonesian,
-        catering.restaurant.arab, catering.restaurant.portuguese, catering.restaurant.russian,
-        catering.restaurant.filipino, catering.restaurant.african, catering.restaurant.malaysian,
-        catering.restaurant.caribbean, catering.restaurant.peruvian, catering.restaurant.bavarian,
-        catering.restaurant.brazilian, catering.restaurant.curry, catering.restaurant.dumpling,
-        catering.restaurant.persian, catering.restaurant.argentinian, catering.restaurant.oriental,
-        catering.restaurant.balkan, catering.restaurant.moroccan, catering.restaurant.pita,
-        catering.restaurant.ethiopian, catering.restaurant.taiwanese, catering.restaurant.latin_american,
-        catering.restaurant.hawaiian, catering.restaurant.irish, catering.restaurant.austrian,
-        catering.restaurant.croatian, catering.restaurant.danish, catering.restaurant.tacos,
-        catering.restaurant.bolivian, catering.restaurant.hungarian, catering.restaurant.western,
-        catering.restaurant.european, catering.restaurant.jamaican, catering.restaurant.cuban,
-        catering.restaurant.soup, catering.restaurant.uzbek, catering.restaurant.nepalese,
-        catering.restaurant.czech, catering.restaurant.syrian, catering.restaurant.afghan,
-        catering.restaurant.malay, catering.restaurant.chili, catering.restaurant.belgian,
-        catering.restaurant.ukrainian, catering.restaurant.swedish, catering.restaurant.pakistani"
         
         Respond **only** with the exact category name from the above. Do not add any extra text. 
         Example output: `catering.restaurant`
@@ -847,7 +857,29 @@ def agent_activity(message):
     print("Determined activity category:", category)
     return category
 
-    
+def agent_detect_intent(query):
+    '''
+    Uses LLM to detect intent.
+    "1": message includes a request for suggestions
+    "2": all other messages
+    '''
+    intent_response = generate(
+        model='4o-mini',
+        system=(
+            "You are an intent detection assistant. "
+            "Analyze the following user message and return a single number: "
+            "return '1' if the user is asking for activity suggestions, and '2' otherwise."
+        ),
+        query=query,
+        temperature=0.0,
+        lastk=1,
+        session_id="intent_detector"
+    )
+
+    intent = intent_response.get('response').strip()
+    print(f"Detected intent: {intent}")
+    return intent
+
 @app.errorhandler(404)
 def page_not_found(e):
     return "Not Found", 404
