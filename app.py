@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 
 app = Flask(__name__)
-session_id = "7havelaydatePlanner-"
+session_id = "8havelaydatePlanner-"
 
 # Rocket.Chat API endpoint
 API_BASE_URL = "https://chat.genaiconnect.net/api/v1"
@@ -88,30 +88,9 @@ def send_message_with_buttons(username, text, page=1):
     attachments = []
     if page > 1:
         print('add previous')
-        attachments.append(
-        {
-            "actions": [
-            {
-                "type": "button",
-                "text": "Previous",
-                "callback_id": f"prev_page:{page - 1}"
-            }
-            ]
-        }
-    )
+        
     if page < total_pages:
         print('add next')
-        attachments.append(
-            {
-                "actions": [
-                {
-                    "type": "button",
-                    "text": "Next",
-                    "callback_id": f"next_page:{page + 1}"
-                }
-                ]
-            }
-        )
 
     payload = {
         "channel": f"@{username}",
