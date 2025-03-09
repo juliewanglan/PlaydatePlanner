@@ -798,12 +798,12 @@ def main():
 
     print(f"Message from {user} : {message}")
 
-    # intent = agent_detect_intent(message)
-    # if intent == "1":
-    #     print("========SEND_ACTIVITY_SUGGESTIONS START========")
-    #     send_activity_suggestions(user)
-    #     print("========SEND_ACTIVITY_SUGGESTIONS DONE========")
-    #     return jsonify({"status": "activity_suggestions"})
+    intent = agent_detect_intent(message)
+    if intent == "1":
+        print("========SEND_ACTIVITY_SUGGESTIONS START========")
+        send_activity_suggestions(user)
+        print("========SEND_ACTIVITY_SUGGESTIONS DONE========")
+        return jsonify({"status": "activity_suggestions"})
     
     print("message length", len(message.split()[0]) == 1)
     print(message.split())
@@ -880,7 +880,10 @@ def main():
     )
     print("TYPE: ", type(response))
     print("*********QUERY FINISHED*********")
-    response_text = response['response']
+    if isinstance(response, dict):
+        response_text = response.get('response', '').strip()
+    else:
+        response_text = response.strip()
     print("RESPONSE TEXT: ", response_text)
     print(sess_id)
 
@@ -979,7 +982,10 @@ def agent_activity(message):
     )
     
     # Extract the category from the LLM response.
-    category = response.get('response', '').strip()
+    if isinstance(response, dict):
+        category = response.get('response', '').strip()
+    else:
+        category = response.strip()
     print("Determined activity category:", category)
     return category
 
@@ -1009,7 +1015,10 @@ def agent_detect_intent(query):
         session_id="intent_detector"
     )
 
-    intent = intent_response['response'].strip()
+    if isinstance(intent_response, dict):
+        intent = intent_response.get('response', '').strip()
+    else:
+        intent = intent_response.strip()
     print(f"Detected intent: {intent}")
     return intent
 
