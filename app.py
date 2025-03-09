@@ -27,7 +27,10 @@ upload_headers = {
     "X-User-Id": os.environ.get("RC_userId") #Replace with your bot user id for local testing or keep it and store secrets in Koyeb
 }
 
-def send_message_with_buttons(username, text):
+PAGE_SIZE = 3  # Number of items per page
+user_pages = {}
+
+def send_message_with_buttons(username, text, page=1):
     """Send a message with Yes/No buttons for plan confirmation."""
     # payload = {
     #     "channel": f"@{username}",
@@ -52,6 +55,9 @@ def send_message_with_buttons(username, text):
     """Send a paginated message with navigation buttons."""
     data = text.get("features", [])  # Extract the list of items
     total_items = len(data)
+
+    print("PAGINATION: ", data)
+    print('TOTAL ITEMS: ', total_items)
     
     # Calculate total pages
     total_pages = (total_items // PAGE_SIZE) + (1 if total_items % PAGE_SIZE else 0)
