@@ -685,21 +685,21 @@ def details_complete(response_text, user, sess_id, page=0):
             else:
                 print("Error calling Geoapify API")
 
-            # response = generate(
-            #     model = '4o-mini',
-            #     system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
-            #     query = (
-            #         f'''The following list of activities was generated based on an API call: {api_result.json()}.
-            #         For clarity and future reference, please present them as numbered options.
-            #         In subsequent requests, refer to these numbers for any follow-up actions.'''
-            #     ),
-            #     temperature=0.3,
-            #     lastk=20,
-            #     session_id=sess_id
-            # )
-            # response_text = response['response']
-            # print('LIST OF PLACES GENERATED')
-            # print(response_text)
+            response = generate(
+                model = '4o-mini',
+                system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
+                query = (
+                    f'''The following list of activities was generated based on an API call: {api_result.json()}.
+                    For clarity and future reference, please present them as numbered options.
+                    In subsequent requests, refer to these numbers for any follow-up actions.'''
+                ),
+                temperature=0.3,
+                lastk=20,
+                session_id=sess_id
+            )
+            response_text = response['response']
+            print('LIST OF PLACES GENERATED')
+            print(response_text)
 
             rocketchat_response = send_message_with_buttons(user, response_text)
         except Exception as e:
