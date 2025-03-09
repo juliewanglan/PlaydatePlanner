@@ -569,12 +569,14 @@ def redo_command(user, message, sess_id):
             print(response_text)
 
             rocketchat_response = send_message_with_buttons(user, response_text)
+            return jsonify({"status": "redo_search"})
         except Exception as e:
             # Log the error and update response_text with a generic error message
             print(f"An error occurred: {e}")
             response_text = "An error occurred while processing your request. Please try again later."
 
     elif command_type == "activity":
+        print("Fetching a new activity...")
         payload = {
                 "channel": f"@{confirmed_user}",
                 "text": f"Give a new activity"
@@ -587,7 +589,6 @@ def redo_command(user, message, sess_id):
         except Exception as e:
             print(f"An error occurred stating the confirmation: {e}")
             return {"error": f"Error: {e}"}
-        print("Fetching a new activity...")
     
     else:
         return {"error": "Invalid option. Use `radius` to expand the search or `activity` to try a new one."}
@@ -739,7 +740,6 @@ def main():
         print("========REDO COMMAND START========")
         redo_command(user, message, sess_id)
         print("========REDO COMMAND DONE========")
-        return jsonify({"status": "redo_search"})
 
     print('MESSAGE BEFORE THE QUERY:', message)
 
