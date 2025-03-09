@@ -724,7 +724,7 @@ def details_complete(response_text, user, sess_id, page=0):
             print('LIST OF PLACES GENERATED')
             print(response_text)
 
-            rocketchat_response = send_message_with_buttons(user, response_text)
+            rocketchat_response = send_message_with_buttons(user, api_result.json())
         except Exception as e:
             # Log the error and update response_text with a generic error message
             print(f"An error occurred: {e}")
