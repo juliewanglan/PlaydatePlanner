@@ -801,7 +801,7 @@ def main():
     intent = agent_detect_intent(message)
     if intent == "1":
         print("========SEND_ACTIVITY_SUGGESTIONS START========")
-        send_acitivity_suggestions(user)
+        send_activity_suggestions(user)
         print("========SEND_ACTIVITY_SUGGESTIONS DONE========")
         return jsonify({"status": "activity_suggestions"})
     
@@ -1008,7 +1008,7 @@ def agent_detect_intent(query):
         session_id="intent_detector"
     )
 
-    intent = intent_response.get('response').strip()
+    intent = intent_response['response'].strip()
     print(f"Detected intent: {intent}")
     return intent
 
