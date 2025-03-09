@@ -53,7 +53,7 @@ def send_message_with_buttons(username, text, page=1):
     #     print(f"An unexpected error occurred while sending message to {username}: {e}")
     #     return {"error": f"Unexpected error: {e}"}
     """Send a paginated message with navigation buttons."""
-    data = text.get("features", [])  # Extract the list of items
+    data = text['features']  # Extract the list of items
     total_items = len(data)
 
     print("PAGINATION: ", data)
