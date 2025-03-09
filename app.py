@@ -90,16 +90,24 @@ def send_message_with_buttons(username, text, page=1):
         attachments.append(
         {
             "callback_data": f"prev_page:{page - 1}",
-            "type": "button",
-            "text": "Previous"
+            "actions": [
+                {
+                    "type": "button",
+                    "text": "Previous"
+                }
+            ]
         }
     )
     if page < total_pages:
         attachments.append(
             {
                 "callback_data": f"next_page:{page + 1}",
-                "type": "button",
-                "text": "Next"
+                "actions": [
+                    {
+                        "type": "button",
+                        "text": "Next"
+                    }
+                ]
             }
         )
 
