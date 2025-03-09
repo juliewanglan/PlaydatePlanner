@@ -392,7 +392,7 @@ def send_calendar_to_recipient(message, room_id):
                     lastk=20,
                     session_id=friend_sess_id
                 )
-                ical_content = response['response'].strip()
+                ical_content = response.get('response').strip()
                 if ical_content.startswith("```") and ical_content.endswith("```"):
                     ical_content = ical_content[3:-3].strip()
                 print("Generated ICS content:")
@@ -475,7 +475,7 @@ def send_calendar_to_planner(message, room_id):
                 lastk=20,
                 session_id=friend_sess_id
             )
-            ical_content = response['response'].strip()
+            ical_content = response.get('response').strip()
             if ical_content.startswith("```") and ical_content.endswith("```"):
                 ical_content = ical_content[3:-3].strip()
             print("Generated ICS content:")
