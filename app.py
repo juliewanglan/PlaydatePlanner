@@ -216,33 +216,46 @@ def send_plan_to_friend(friend_username, username, plan_text):
         print(f"An unexpected error occurred while sending message to {username}: {e}")
         return {"error": f"Unexpected error: {e}"}
 
-def send_acitivity_suggestions(user):
-        suggestions = ["restaurant", "cafe", "museum", "movie", "park"]
-        payload = {
-            "channel": f"@{user}",
-            "text": "Here are some activity suggestions for you:",
-            "attachments": [
-                {
-                    "text": "Please choose one of the following activities:",
-                    "actions": [
-                        {
-                            "type": "button",
-                            "text": f"{idx+1}. {suggestion}",
-                            "msg": f"The activity category chosen is: {suggestion}",
-                            "msg_in_chat_window": True
-                        } for idx, suggestion in enumerate(suggestions)
-                    ]
-                }
-            ]
-        }
-        try:
-            response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-            response.raise_for_status()
-            print(f"Sent activity suggestion buttons to {user}.")
-            return response.json()
-        except Exception as e:
-            print(f"Error sending activity suggestions: {e}")
-            return {"error": f"Unexpected error: {e}"}
+def send_activity_suggestions(user):
+    # Pair each suggestion with an emoji for a more visual presentation
+    suggestions = [
+        ("Restaurant", "🍽️"),
+        ("Cafe", "☕"),
+        ("Museum", "🏛️"),
+        ("Movie", "🎬"),
+        ("Park", "🌳")
+    ]
+    
+    # Build the actions array with improved formatting and optional styling
+    actions = []
+    for idx, (suggestion, emoji) in enumerate(suggestions):
+        actions.append({
+            "type": "button",
+            "text": f"{emoji} {suggestion.capitalize()}",
+            "msg": f"The activity category chosen is: {suggestion}",
+            "msg_in_chat_window": True,
+            "style": "primary"  # Optional: use "primary", "danger", etc. if supported
+        })
+    
+    payload = {
+        "channel": f"@{user}",
+        "text": "Here are some activity suggestions for you:",
+        "attachments": [
+            {
+                "text": "Please choose one of the following activities:",
+                "actions": actions
+            }
+        ]
+    }
+    
+    try:
+        response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+        response.raise_for_status()
+        print(f"Sent activity suggestion buttons to {user}.")
+        return response.json()
+    except Exception as e:
+        print(f"Error sending activity suggestions: {e}")
+        return {"error": f"Unexpected error: {e}"}
 
 def confirm_command(message):
     parts = message.split()
@@ -320,6 +333,7 @@ def activity_chosen(message, user, sess_id):
     except Exception as e:
         # Handle any other unexpected errors
         return {"error": f"Unexpected error: {e}"}
+
 def regenerate_summary(sess_id):
     print("MESSAGE LENGTH IS 1")
     print("VALID USERNAME")
@@ -392,9 +406,10 @@ def send_calendar_to_recipient(message, room_id):
                 # Write the ICS content to a file
                 ics_filename = "event.ics"
                 print(f"Writing ICS content to file: {ics_filename}")
+                ics_content = ical_content.replace("\n", "\r\n")
                 try:
                     with open(ics_filename, "w") as f:
-                        f.write(ical_content)
+                        f.write(ics_content)
                     print("ICS file written successfully.")
                 except Exception as e:
                     print(f"Error writing ICS file: {e}")
@@ -784,6 +799,7 @@ def main():
         print("========SEND_ACTIVITY_SUGGESTIONS START========")
         send_acitivity_suggestions(user)
         print("========SEND_ACTIVITY_SUGGESTIONS DONE========")
+        return jsonify({"status": "activity_suggestions"})
     
     print("message length", len(message.split()[0]) == 1)
     print(message.split())
