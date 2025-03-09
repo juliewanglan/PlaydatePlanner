@@ -706,7 +706,7 @@ def details_complete(response_text, user, sess_id, page=0):
                 "apiKey":os.environ.get("geoapifyApiKey")
             }
 
-            url = f"https://api.geoapify.com/v2/places?categories={params['category']}&filter=circle:{params['bias']},8000&limit=10&apiKey={params['apiKey']}"
+            url = f"https://api.geoapify.com/v2/places?categories={params['category']}&filter=circle:{params['bias']},5000&limit=10&apiKey={params['apiKey']}"
             api_result = requests.get(url)
             print(url)
             if api_result.status_code == 200:
@@ -751,12 +751,16 @@ def details_complete(response_text, user, sess_id, page=0):
                 print("Error calling Geoapify API")
 
             response = generate(
-                model = '4o-mini',
-                system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
-                query = (
-                    f'''The following list of activities was generated based on an API call: {api_result.json()}.
-                    For clarity and future reference, please present them as numbered options.
-                    In subsequent requests, refer to these numbers for any follow-up actions.'''
+                model='4o-mini',
+                system='Be friendly and produce a clear, nicely formatted list.\
+                        Format the output in markdown, using numbered items and \
+                        bullet points (or emojis) to make it visually appealing.\
+                        Make sure it looks clean.',
+                query=(
+                    f'''Based on the API response: {api_result.json()},
+                    please present the list of activities as a clean, well-organized numbered list.
+                    Each item should be on its own line, and feel free to add a suitable emoji for each option.
+                    In subsequent requests, refer to these numbers for follow-up actions.'''
                 ),
                 temperature=0.3,
                 lastk=20,
