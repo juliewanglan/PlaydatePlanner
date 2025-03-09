@@ -798,12 +798,12 @@ def main():
 
     print(f"Message from {user} : {message}")
 
-    intent = agent_detect_intent(message)
-    if intent == "1":
-        print("========SEND_ACTIVITY_SUGGESTIONS START========")
-        send_activity_suggestions(user)
-        print("========SEND_ACTIVITY_SUGGESTIONS DONE========")
-        return jsonify({"status": "activity_suggestions"})
+    # intent = agent_detect_intent(message)
+    # if intent == "1":
+    #     print("========SEND_ACTIVITY_SUGGESTIONS START========")
+    #     send_activity_suggestions(user)
+    #     print("========SEND_ACTIVITY_SUGGESTIONS DONE========")
+    #     return jsonify({"status": "activity_suggestions"})
     
     print("message length", len(message.split()[0]) == 1)
     print(message.split())
@@ -878,6 +878,7 @@ def main():
         lastk=20,
         session_id=sess_id
     )
+    print("TYPE: ", type(response))
     print("*********QUERY FINISHED*********")
     response_text = response['response']
     print("RESPONSE TEXT: ", response_text)
