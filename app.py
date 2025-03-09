@@ -117,6 +117,7 @@ def send_message_with_buttons(username, text, page=1):
         "channel": f"@{username}",
         "text": message_text,
         "attachments": attachments,
+        "msg_in_chat_window": True
     }
 
     try:
