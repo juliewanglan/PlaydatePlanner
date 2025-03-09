@@ -392,9 +392,11 @@ def send_calendar_to_planner(message, room_id):
             # Write the ICS content to a file
             ics_filename = "event.ics"
             print(f"Writing ICS content to file: {ics_filename}")
+            ics_content = ical_content.replace("\n", "\r\n")
+
             try:
                 with open(ics_filename, "w") as f:
-                    f.write(ical_content)
+                    f.write(ics_content)
                 print("ICS file written successfully.")
             except Exception as e:
                 print(f"Error writing ICS file: {e}")
