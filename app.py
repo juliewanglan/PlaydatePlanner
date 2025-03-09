@@ -86,6 +86,8 @@ def send_message_with_buttons(username, text, page=1):
 
     # Add navigation buttons
     attachments = [{
+        "title": "Navigation",  # Required field
+        "button_alignment": "horizontal",  # Align buttons properly
         "actions": []
     }]
     if page > 1:
