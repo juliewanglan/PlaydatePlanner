@@ -91,31 +91,12 @@ def send_message_with_buttons(username, text, page=1):
         "actions": []
     }]
 
-    # [
-    #     {
-    #         "text": "Do you like this plan?",
-    #         "actions": [
-    #             {
-    #                 "type": "button",
-    #                 "text": "✅ Yes",
-    #                 "msg": f"!final {username} {friend_username} yes",
-    #                 "msg_in_chat_window": True
-    #             },
-    #             {
-    #                 "type": "button",
-    #                 "text": "❌ No",
-    #                 "msg": f"!final {username} {friend_username} no",
-    #                 "msg_in_chat_window": True
-    #             }
-    #         ]
-    #     }
-    # ]
     if page > 1:
         print('add prev')
         attachments[0]["actions"].append({
             "type": "button",
             "text": "⬅️ Previous",
-            "callback_id": f"prev_page:{page - 1}"
+            "callback_id": f"prev_page:{page - 1}",
             "msg_in_chat_window": True
         })
 
@@ -124,7 +105,7 @@ def send_message_with_buttons(username, text, page=1):
         attachments[0]["actions"].append({
             "type": "button",
             "text": "➡️ Next",
-            "callback_id": f"next_page:{page + 1}"
+            "callback_id": f"next_page:{page + 1}",
             "msg_in_chat_window": True
         })
     print('attachments: ', attachments)
