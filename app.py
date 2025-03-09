@@ -85,7 +85,9 @@ def send_message_with_buttons(username, text, page=1):
         message_text += f"{i}. {name}\n    {address}\n    {website}\n    {phone}\n\n"
 
     # Add navigation buttons
-    attachments = []
+    attachments = [{
+        "actions": []
+    }]
     if page > 1:
         print('add prev')
         attachments[0]["actions"].append({
