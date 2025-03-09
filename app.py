@@ -101,7 +101,7 @@ def send_message_with_buttons(username, text, page=1):
             "text": "➡️ Next",
             "callback_id": f"next_page:{page + 1}"
         })
-
+    print('attachments: ', attachments)
     payload = {
         "channel": f"@{username}",
         "text": message_text,
