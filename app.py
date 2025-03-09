@@ -719,11 +719,14 @@ def main():
         print("========CONFIRM_COMMAND START========")
         confirm_command(message)
         print("========CONFIRM_COMMAND DONE========")
+        return jsonify({"status": "valid_confirmation"})
+
         
     if message.startswith("!calendar"):
         print("========CALENDAR COMMAND START========")
         send_calendar_to_recipient(message, room_id)
         print("========CALENDAR COMMAND DONE========")
+        return jsonify({"status": "calendar_sent"})
         
 
     if message.startswith("!final"):
