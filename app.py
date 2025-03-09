@@ -76,7 +76,13 @@ def send_message_with_buttons(username, text, page=1):
     # Format message content
     message_text = f"Page {page}/{total_pages}:\n"
     for i, item in enumerate(page_data, start=start_index + 1):
-        message_text += f"{i}. {item['name']} - {item['details']}\n"  # Customize based on API response
+        properties = item.get('properties', {})
+        name = properties.get('name', 'Unknown')
+        address = properties.get('formatted', 'No address available')
+        website = properties.get('website', 'No website listed')
+        phone = properties.get('contact', {}).get('phone', 'No phone number')
+
+        message_text += f"{i}. {name}\n    {address}\n    {website}\n    {phone}\n\n"
 
     # Add navigation buttons
     attachments = []
