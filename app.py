@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 
 app = Flask(__name__)
-session_id = "6havelaydatePlanner-"
+session_id = "7havelaydatePlanner-"
 
 # Rocket.Chat API endpoint
 API_BASE_URL = "https://chat.genaiconnect.net/api/v1"
