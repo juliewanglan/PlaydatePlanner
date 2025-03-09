@@ -27,17 +27,52 @@ upload_headers = {
     "X-User-Id": os.environ.get("RC_userId") #Replace with your bot user id for local testing or keep it and store secrets in Koyeb
 }
 
-def send_message_with_buttons(username, text):
+def send_message_with_buttons(username, data_api, page=0):
     """Send a message with Yes/No buttons for plan confirmation."""
+    # Implement pagination: show 3 places at a time
+    places = data_api["features"]
+    places_per_page = 3
+    start_index = page * places_per_page
+    end_index = start_index + places_per_page
+    displayed_places = places[start_index:end_index]
+
+    response_text = "Here are some places you might like:\n\n"
+    for i, place in enumerate(displayed_places, start=start_index + 1):
+        name = place["properties"].get("name", "Unnamed Place")
+        address = place["properties"].get("formatted", "No address provided")
+        response_text += f"{i}. {name} - {address}\n"
+
+    # Navigation buttons
+    actions = []
+    if page > 0:
+        actions.append({
+            "type": "button",
+            "text": "⬅️ Previous",
+            "msg": f"!places {user} {page - 1}",
+            "msg_in_chat_window": True
+        })
+    if end_index < len(places):
+        actions.append({
+            "type": "button",
+            "text": "➡️ Next",
+            "msg": f"!places {user} {page + 1}",
+            "msg_in_chat_window": True
+        })
+
     payload = {
-        "channel": f"@{username}",
-        "text": text,
-        "attachments": [
-            {
-                "text": "Which option do you like? Please respond with just the corresponding number.",
-            }
-        ]
+        "channel": f"@{user}",
+        "text": response_text,
+        "attachments": [{"actions": actions}] if actions else []
     }
+    # payload = {
+    #     "channel": f"@{username}",
+    #     "text": text,
+    #     "attachments": [
+    #         {
+    #             "text": "Which option do you like? Please respond with just the corresponding number.",
+    #         }
+    #     ]
+    # }
 
     try:
         # Send the message with buttons to Rocket.Chat
@@ -568,7 +603,7 @@ def redo_command(user, message, sess_id):
             print('LIST OF PLACES GENERATED')
             print(response_text)
 
-            rocketchat_response = send_message_with_buttons(user, response_text)
+            rocketchat_response = send_message_with_buttons(user, data_api)
             return jsonify({"status": "redo_search"})
         except Exception as e:
             # Log the error and update response_text with a generic error message
@@ -647,41 +682,7 @@ def details_complete(response_text, user, sess_id, page=0):
                         # Handle any other unexpected errors
                         return {"error": f"Unexpected error: {e}"}
 
-                # Implement pagination: show 3 places at a time
-                places = data_api["features"]
-                places_per_page = 3
-                start_index = page * places_per_page
-                end_index = start_index + places_per_page
-                displayed_places = places[start_index:end_index]
-
-                response_text = "Here are some places you might like:\n\n"
-                for i, place in enumerate(displayed_places, start=start_index + 1):
-                    name = place["properties"].get("name", "Unnamed Place")
-                    address = place["properties"].get("formatted", "No address provided")
-                    response_text += f"{i}. {name} - {address}\n"
-
-                # Navigation buttons
-                actions = []
-                if page > 0:
-                    actions.append({
-                        "type": "button",
-                        "text": "⬅️ Previous",
-                        "msg": f"!places {user} {page - 1}",
-                        "msg_in_chat_window": True
-                    })
-                if end_index < len(places):
-                    actions.append({
-                        "type": "button",
-                        "text": "➡️ Next",
-                        "msg": f"!places {user} {page + 1}",
-                        "msg_in_chat_window": True
-                    })
-
-                payload = {
-                    "channel": f"@{user}",
-                    "text": response_text,
-                    "attachments": [{"actions": actions}] if actions else []
-                }
+                
             else:
                 print("Error calling Geoapify API")
 
