@@ -647,25 +647,59 @@ def details_complete(response_text, user, sess_id):
                         # Handle any other unexpected errors
                         return {"error": f"Unexpected error: {e}"}
 
-                print("Geoapify API response:", data_api)
+                # Implement pagination: show 3 places at a time
+                places = data_api["features"]
+                places_per_page = 3
+                start_index = page * places_per_page
+                end_index = start_index + places_per_page
+                displayed_places = places[start_index:end_index]
+
+                response_text = "Here are some places you might like:\n\n"
+                for i, place in enumerate(displayed_places, start=start_index + 1):
+                    name = place["properties"].get("name", "Unnamed Place")
+                    address = place["properties"].get("formatted", "No address provided")
+                    response_text += f"{i}. {name} - {address}\n"
+
+                # Navigation buttons
+                actions = []
+                if page > 0:
+                    actions.append({
+                        "type": "button",
+                        "text": "⬅️ Previous",
+                        "msg": f"!places {user} {page - 1}",
+                        "msg_in_chat_window": True
+                    })
+                if end_index < len(places):
+                    actions.append({
+                        "type": "button",
+                        "text": "➡️ Next",
+                        "msg": f"!places {user} {page + 1}",
+                        "msg_in_chat_window": True
+                    })
+
+                payload = {
+                    "channel": f"@{user}",
+                    "text": response_text,
+                    "attachments": [{"actions": actions}] if actions else []
+                }
             else:
                 print("Error calling Geoapify API")
 
-            response = generate(
-                model = '4o-mini',
-                system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
-                query = (
-                    f'''The following list of activities was generated based on an API call: {api_result.json()}.
-                    For clarity and future reference, please present them as numbered options.
-                    In subsequent requests, refer to these numbers for any follow-up actions.'''
-                ),
-                temperature=0.3,
-                lastk=20,
-                session_id=sess_id
-            )
-            response_text = response['response']
-            print('LIST OF PLACES GENERATED')
-            print(response_text)
+            # response = generate(
+            #     model = '4o-mini',
+            #     system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
+            #     query = (
+            #         f'''The following list of activities was generated based on an API call: {api_result.json()}.
+            #         For clarity and future reference, please present them as numbered options.
+            #         In subsequent requests, refer to these numbers for any follow-up actions.'''
+            #     ),
+            #     temperature=0.3,
+            #     lastk=20,
+            #     session_id=sess_id
+            # )
+            # response_text = response['response']
+            # print('LIST OF PLACES GENERATED')
+            # print(response_text)
 
             rocketchat_response = send_message_with_buttons(user, response_text)
         except Exception as e:
