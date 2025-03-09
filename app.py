@@ -594,7 +594,7 @@ def redo_command(user, message, sess_id):
     else:
         return {"error": "Invalid option. Use `radius` to expand the search or `activity` to try a new one."}
 
-def details_complete(response_text, user, sess_id):
+def details_complete(response_text, user, sess_id, page=0):
         print("ALL NECESSARY DETAILS")
         try: 
             activity = agent_activity(response_text)
