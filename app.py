@@ -736,6 +736,7 @@ def main():
         print("========REDO COMMAND START========")
         redo_command(user, message, sess_id)
         print("========REDO COMMAND DONE========")
+        return jsonify({"status": "redo_search"})
 
     print('MESSAGE BEFORE THE QUERY:', message)
 
