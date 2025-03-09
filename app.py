@@ -93,7 +93,7 @@ def send_message_with_buttons(username, text, page=1):
             "actions": [
                 {
                     "type": "button",
-                    "text": "⬅️ Previous"
+                    "text": "Previous"
                 }
             ]
         }
@@ -105,7 +105,7 @@ def send_message_with_buttons(username, text, page=1):
                 "actions": [
                     {
                         "type": "button",
-                        "text": "➡️ Next"
+                        "text": "Next"
                     }
                 ]
             }
