@@ -27,43 +27,8 @@ upload_headers = {
     "X-User-Id": os.environ.get("RC_userId") #Replace with your bot user id for local testing or keep it and store secrets in Koyeb
 }
 
-def send_message_with_buttons(username, data_api, page=0):
+def send_message_with_buttons(username, text):
     """Send a message with Yes/No buttons for plan confirmation."""
-    # Implement pagination: show 3 places at a time
-    places = data_api["features"]
-    places_per_page = 3
-    start_index = page * places_per_page
-    end_index = start_index + places_per_page
-    displayed_places = places[start_index:end_index]
-
-    response_text = "Here are some places you might like:\n\n"
-    for i, place in enumerate(displayed_places, start=start_index + 1):
-        name = place["properties"].get("name", "Unnamed Place")
-        address = place["properties"].get("formatted", "No address provided")
-        response_text += f"{i}. {name} - {address}\n"
-
-    # Navigation buttons
-    actions = []
-    if page > 0:
-        actions.append({
-            "type": "button",
-            "text": "⬅️ Previous",
-            "msg": f"!places {user} {page - 1}",
-            "msg_in_chat_window": True
-        })
-    if end_index < len(places):
-        actions.append({
-            "type": "button",
-            "text": "➡️ Next",
-            "msg": f"!places {user} {page + 1}",
-            "msg_in_chat_window": True
-        })
-
-    payload = {
-        "channel": f"@{user}",
-        "text": response_text,
-        "attachments": [{"actions": actions}] if actions else []
-    }
     # payload = {
     #     "channel": f"@{username}",
     #     "text": text,
@@ -74,16 +39,67 @@ def send_message_with_buttons(username, data_api, page=0):
     #     ]
     # }
 
+    # try:
+    #     # Send the message with buttons to Rocket.Chat
+    #     response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+    #     response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
+    #     print(f"which option do you like the most is sent to {username}.")
+    #     return response.json()  # Return the JSON response if successful
+    # except Exception as e:
+    #     # Handle any other unexpected errors
+    #     print(f"An unexpected error occurred while sending message to {username}: {e}")
+    #     return {"error": f"Unexpected error: {e}"}
+    """Send a paginated message with navigation buttons."""
+    data = text.get("features", [])  # Extract the list of items
+    total_items = len(data)
+    
+    # Calculate total pages
+    total_pages = (total_items // PAGE_SIZE) + (1 if total_items % PAGE_SIZE else 0)
+
+    # Validate page number
+    if page < 1:
+        page = 1
+    elif page > total_pages:
+        page = total_pages
+
+    # Slice data for the current page
+    start_index = (page - 1) * PAGE_SIZE
+    end_index = start_index + PAGE_SIZE
+    page_data = data[start_index:end_index]
+
+    # Format message content
+    message_text = f"Page {page}/{total_pages}:\n"
+    for i, item in enumerate(page_data, start=start_index + 1):
+        message_text += f"{i}. {item['name']} - {item['details']}\n"  # Customize based on API response
+
+    # Add navigation buttons
+    attachments = []
+    if page > 1:
+        attachments.append({"text": "⬅️ Previous", "callback_data": f"prev_page:{page - 1}"})
+    if page < total_pages:
+        attachments.append({"text": "➡️ Next", "callback_data": f"next_page:{page + 1}"})
+
+    payload = {
+        "channel": f"@{username}",
+        "text": message_text,
+        "attachments": attachments,
+    }
+
     try:
-        # Send the message with buttons to Rocket.Chat
         response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-        response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
-        print(f"which option do you like the most is sent to {username}.")
-        return response.json()  # Return the JSON response if successful
+        response.raise_for_status()
+        user_pages[username] = page  # Store current page for the user
+        print(f"Page {page} sent to {username}.")
+        return response.json()
     except Exception as e:
-        # Handle any other unexpected errors
-        print(f"An unexpected error occurred while sending message to {username}: {e}")
-        return {"error": f"Unexpected error: {e}"}
+        print(f"Error sending message to {username}: {e}")
+        return {"error": str(e)}
+
+def handle_pagination(username, callback_data):
+    """Handle navigation callbacks."""
+    action, page = callback_data.split(":")
+    page = int(page)
+    send_message_with_buttons(username, text, page)
 
 
 def ask_for_friend_username(username):
@@ -603,7 +619,7 @@ def redo_command(user, message, sess_id):
             print('LIST OF PLACES GENERATED')
             print(response_text)
 
-            rocketchat_response = send_message_with_buttons(user, data_api)
+            rocketchat_response = send_message_with_buttons(user, response_text)
             return jsonify({"status": "redo_search"})
         except Exception as e:
             # Log the error and update response_text with a generic error message
