@@ -87,26 +87,28 @@ def send_message_with_buttons(username, text, page=1):
     # Add navigation buttons
     attachments = []
     if page > 1:
+        print('add previous')
         attachments.append(
         {
-            "callback_data": f"prev_page:{page - 1}",
             "actions": [
-                {
-                    "type": "button",
-                    "text": "Previous"
-                }
+            {
+                "type": "button",
+                "text": "Previous",
+                "callback_id": f"prev_page:{page - 1}"
+            }
             ]
         }
     )
     if page < total_pages:
+        print('add next')
         attachments.append(
             {
-                "callback_data": f"next_page:{page + 1}",
                 "actions": [
-                    {
-                        "type": "button",
-                        "text": "Next"
-                    }
+                {
+                    "type": "button",
+                    "text": "Next",
+                    "callback_id": f"next_page:{page + 1}"
+                }
                 ]
             }
         )
