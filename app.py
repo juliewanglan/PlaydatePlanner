@@ -564,9 +564,10 @@ def send_calendar_to_planner(message, room_id):
             query = (f"""
                     Using the previously generated event summary from our conversation context, generate a complete and valid iCalendar (ICS) document
                     that reflects the event details.
-                    Name the calendar event based on the activity/place found in the summary (keep it brief, a few word summary).
+                    Name the calendar event based on the activity/place found in the summary.
                     Set the location of the calendar event to the address of the location in the summary.
                     Set the time of the calendar event to the time of the hangout, using the current date as reference.
+                    Keep the description brief (less than 60 characters) to comply with ICS file format.
                     Output only the ICS content with no extra text.
                     Follow valid ICS file format.
                     For reference, today's date and time is {datetime.now(ZoneInfo('America/New_York'))}.
