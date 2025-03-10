@@ -372,18 +372,18 @@ def send_calendar_to_recipient(message, room_id):
                     "and include only the ICS content without any additional commentary or explanation. " 
                     "Ensure you include mandatory fields such as BEGIN:VCALENDAR, VERSION, PRODID, BEGIN:VEVENT, UID, DTSTAMP, " 
                     "DTSTART, DTEND, and SUMMARY."
-                    "This is the same calendar event you just generated."
+                    "Note that no line length should exceed 75 characters."
                 )
                 query = (f"""
-                        Repeat the last ical creation:
                         Using the previously generated event summary from our conversation context, generate a complete and valid iCalendar (ICS) document
                         that reflects the event details.
                         Name the calendar event based on the activity/place found in the summary.
                         Set the location of the calendar event to the address of the location in the summary.
                         Set the time of the calendar event to the time of the hangout, using the current date as reference.
+                        Keep the description brief (less than 60 characters) to comply with ICS file format.
                         Output only the ICS content with no extra text.
+                        Follow valid ICS file format.
                         For reference, today's date and time is {datetime.now(ZoneInfo('America/New_York'))}.
-                        This is the same calendar event you just generated.
                         """)
                 response = generate(
                     model='4o-mini',
@@ -408,6 +408,7 @@ def send_calendar_to_recipient(message, room_id):
                 ics_filename = "event.ics"
                 print(f"Writing ICS content to file: {ics_filename}")
                 ics_content = ical_content.replace("\n", "\r\n")
+                ics_content = ics_content.strip()
                 try:
                     with open(ics_filename, "w") as f:
                         f.write(ics_content)
@@ -494,6 +495,7 @@ def send_calendar_to_planner(message, room_id):
             ics_filename = "event.ics"
             print(f"Writing ICS content to file: {ics_filename}")
             ics_content = ical_content.replace("\n", "\r\n")
+            ics_content = ics_content.strip()
 
             try:
                 with open(ics_filename, "w") as f:
@@ -892,6 +894,7 @@ def main():
         "If any one of these details is missing, ask a clear and direct clarifying question about that specific missing detail. "
         "Do not produce a final summary until you have all the required details. "
         "If the user inputs information that they have already given (changed their mind), rewrite over the previous information for that specific detail"
+        "Do not ask for clarification or for information that you have already received"
         "Only when all details are provided, respond with exactly: 'All necessary details completed:' followed by a summary of the plan. "
         f"This is the user's next message: {message}"
     )
