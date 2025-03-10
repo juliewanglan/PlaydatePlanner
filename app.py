@@ -32,99 +32,99 @@ user_pages = {}
 
 def send_message_with_buttons(username, text, page=1):
     """Send a message with Yes/No buttons for plan confirmation."""
-    # payload = {
-    #     "channel": f"@{username}",
-    #     "text": text,
-    #     "attachments": [
-    #         {
-    #             "text": "Which option do you like? Please respond with just the corresponding number.",
-    #         }
-    #     ]
-    # }
-
-    # try:
-    #     # Send the message with buttons to Rocket.Chat
-    #     response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-    #     response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
-    #     print(f"which option do you like the most is sent to {username}.")
-    #     return response.json()  # Return the JSON response if successful
-    # except Exception as e:
-    #     # Handle any other unexpected errors
-    #     print(f"An unexpected error occurred while sending message to {username}: {e}")
-    #     return {"error": f"Unexpected error: {e}"}
-    """Send a paginated message with navigation buttons."""
-    data = text['features']  # Extract the list of items
-    total_items = len(data)
-
-    print("PAGINATION: ", data)
-    print('TOTAL ITEMS: ', total_items)
-    
-    # Calculate total pages
-    total_pages = (total_items // PAGE_SIZE) + (1 if total_items % PAGE_SIZE else 0)
-
-    # Validate page number
-    if page < 1:
-        page = 1
-    elif page > total_pages:
-        page = total_pages
-
-    # Slice data for the current page
-    start_index = (page - 1) * PAGE_SIZE
-    end_index = start_index + PAGE_SIZE
-    page_data = data[start_index:end_index]
-
-    # Format message content
-    message_text = f"Page {page}/{total_pages}:\n"
-    for i, item in enumerate(page_data, start=start_index + 1):
-        properties = item.get('properties', {})
-        name = properties.get('name', 'Unknown')
-        address = properties.get('formatted', 'No address available')
-        website = properties.get('website', 'No website listed')
-        phone = properties.get('contact', {}).get('phone', 'No phone number')
-
-        message_text += f"{i}. {name}\n    {address}\n    {website}\n    {phone}\n\n"
-
-    # Add navigation buttons
-    attachments = [{
-        "title": "Navigation",  # Required field
-        "button_alignment": "horizontal",  # Align buttons properly
-        "actions": []
-    }]
-
-    if page > 1:
-        print('add prev')
-        attachments[0]["actions"].append({
-            "type": "button",
-            "text": "⬅️ Previous",
-            "callback_id": f"prev_page:{page - 1}",
-            "msg_in_chat_window": True
-        })
-
-    if page < total_pages:
-        print('add next')
-        attachments[0]["actions"].append({
-            "type": "button",
-            "text": "➡️ Next",
-            "callback_id": f"next_page:{page + 1}",
-            "msg_in_chat_window": True
-        })
-    print('attachments: ', attachments)
     payload = {
         "channel": f"@{username}",
-        "text": message_text,
-        "attachments": attachments,
-        "msg_in_chat_window": True
+        "text": text,
+        "attachments": [
+            {
+                "text": "Which option do you like? Please respond with just the corresponding number.",
+            }
+        ]
     }
 
     try:
+        # Send the message with buttons to Rocket.Chat
         response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-        response.raise_for_status()
-        user_pages[username] = page  # Store current page for the user
-        print(f"Page {page} sent to {username}.")
-        return response.json()
+        response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
+        print(f"which option do you like the most is sent to {username}.")
+        return response.json()  # Return the JSON response if successful
     except Exception as e:
-        print(f"Error sending message to {username}: {e}")
-        return {"error": str(e)}
+        # Handle any other unexpected errors
+        print(f"An unexpected error occurred while sending message to {username}: {e}")
+        return {"error": f"Unexpected error: {e}"}
+    # """Send a paginated message with navigation buttons."""
+    # data = text['features']  # Extract the list of items
+    # total_items = len(data)
+
+    # print("PAGINATION: ", data)
+    # print('TOTAL ITEMS: ', total_items)
+    
+    # # Calculate total pages
+    # total_pages = (total_items // PAGE_SIZE) + (1 if total_items % PAGE_SIZE else 0)
+
+    # # Validate page number
+    # if page < 1:
+    #     page = 1
+    # elif page > total_pages:
+    #     page = total_pages
+
+    # # Slice data for the current page
+    # start_index = (page - 1) * PAGE_SIZE
+    # end_index = start_index + PAGE_SIZE
+    # page_data = data[start_index:end_index]
+
+    # # Format message content
+    # message_text = f"Page {page}/{total_pages}:\n"
+    # for i, item in enumerate(page_data, start=start_index + 1):
+    #     properties = item.get('properties', {})
+    #     name = properties.get('name', 'Unknown')
+    #     address = properties.get('formatted', 'No address available')
+    #     website = properties.get('website', 'No website listed')
+    #     phone = properties.get('contact', {}).get('phone', 'No phone number')
+
+    #     message_text += f"{i}. {name}\n    {address}\n    {website}\n    {phone}\n\n"
+
+    # # Add navigation buttons
+    # attachments = [{
+    #     "title": "Navigation",  # Required field
+    #     "button_alignment": "horizontal",  # Align buttons properly
+    #     "actions": []
+    # }]
+
+    # if page > 1:
+    #     print('add prev')
+    #     attachments[0]["actions"].append({
+    #         "type": "button",
+    #         "text": "⬅️ Previous",
+    #         "callback_id": f"prev_page:{page - 1}",
+    #         "msg_in_chat_window": True
+    #     })
+
+    # if page < total_pages:
+    #     print('add next')
+    #     attachments[0]["actions"].append({
+    #         "type": "button",
+    #         "text": "➡️ Next",
+    #         "callback_id": f"next_page:{page + 1}",
+    #         "msg_in_chat_window": True
+    #     })
+    # print('attachments: ', attachments)
+    # payload = {
+    #     "channel": f"@{username}",
+    #     "text": message_text,
+    #     "attachments": attachments,
+    #     "msg_in_chat_window": True
+    # }
+
+    # try:
+    #     response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+    #     response.raise_for_status()
+    #     user_pages[username] = page  # Store current page for the user
+    #     print(f"Page {page} sent to {username}.")
+    #     return response.json()
+    # except Exception as e:
+    #     print(f"Error sending message to {username}: {e}")
+    #     return {"error": str(e)}
 
 def handle_pagination(username, callback_data):
     """Handle navigation callbacks."""
