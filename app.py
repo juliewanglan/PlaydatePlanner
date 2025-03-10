@@ -110,28 +110,6 @@ def handle_show_more(message):
         else:
             print(f"No stored results for user {username}")
 
-# # New handler for the "Choose" command:
-# def handle_choose(message):
-#     parts = message.split()
-#     if len(parts) >= 3 and parts[0] == "!choose":
-#         username = parts[1]
-#         try:
-#             chosen_index = int(parts[2])
-#         except ValueError:
-#             print("Invalid index provided.")
-#             return
-        
-#         results = user_results.get(username, [])
-#         if 0 < chosen_index <= len(results):
-#             chosen_activity = results[chosen_index - 1]  # Adjust for zero-based indexing
-#             # Process the chosen activity (e.g., confirm selection, show details, etc.)
-#             print(f"User {username} chose option {chosen_index}: {chosen_activity}")
-#             # You can send a confirmation message or trigger further processing here.
-#         else:
-#             print(f"Choice out of range for user {username}.")
-#     else:
-#         print("Invalid choose command format.")
-
 def send_message_with_buttons(username, text, page=1):
     """Send a message with Yes/No buttons for plan confirmation."""
     payload = {
@@ -934,13 +912,6 @@ def main():
         handle_show_more(message)
         print("========HANDLE_SHOW_MORE START========")
         return jsonify({"status": "show_more_handled"})
-
-    if message.startswith("!choose"):
-        print("========HANDLE_CHOOSE START========")
-        handle_choose(message)
-        print("========HANDLE_CHOOSE START========")
-        return jsonify({"status": "option_chosen"})
-
         
     if message.startswith("!calendar"):
         print("========CALENDAR COMMAND START========")
@@ -978,7 +949,6 @@ def main():
         "Ask clarifying questions only if required details (location, time, or activity) are missing. "
         "If a new detail is given, forget the original and remember the other details "
         "If everything is provided, summarize the plan starting with: 'All necessary details completed:'. "
-        "Do NOT repeat questions unnecessarily. "
         "Please use emojis"
     )
     print("*********ABOUT TO START QUERY*********")
