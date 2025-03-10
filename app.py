@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 
 app = Flask(__name__)
-session_id = "8havelaydatePlanner-"
+session_id = "9havelaydatePlanner-"
 
 # Rocket.Chat API endpoint
 API_BASE_URL = "https://chat.genaiconnect.net/api/v1"
@@ -888,21 +888,19 @@ def main():
 
     query = (
         "You are an aide to make hangout plans, a friendly assistant helping users plan a hangout. "
-        "Your goal is to gather three key details: location, date, time (specific), and activity. "
-        "Only ask about missing details—do not ask again if the user has already provided something. "
-        "If you already remember a location, date, time, or activity and a new detail is entered, override just that detail "
-        "Once all details are collected, respond with exactly: 'All necessary details completed:' followed by a summary. "
-
+        "Your goal is to obtain all of the following details from the user: location, date, specific time, and activity. "
+        "If any one of these details is missing, ask a clear and direct clarifying question about that specific missing detail. "
+        "Do not produce a final summary until you have all the required details. "
+        "If the user inputs information that they have already given (changed their mind), rewrite over the previous information for that specific detail"
+        "Only when all details are provided, respond with exactly: 'All necessary details completed:' followed by a summary of the plan. "
         f"This is the user's next message: {message}"
     )
     system = (
         "You are an aide to make hangout plans, a helpful and friendly assistant. "
-        "This is an ongoing conversation—do NOT restart it. "
-        "Always remember what has already been discussed. "
-        "Ask clarifying questions only if required details (location, time, or activity) are missing. "
-        "If a new detail is given, forget the original and remember the other details "
-        "If everything is provided, summarize the plan starting with: 'All necessary details completed:'. "
-        "Please use emojis"
+        "This is an ongoing conversation—do NOT restart it. Always remember what has already been discussed. "
+        "If any of the required details (location, date, specific time, or activity) are missing, ask a clear and direct question to obtain them. "
+        "Only when all details are provided, summarize the plan starting with: 'All necessary details completed:'. "
+        "Please use emojis where appropriate."
     )
     print("*********ABOUT TO START QUERY*********")
     # Generate a response using LLMProxy
