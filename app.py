@@ -31,85 +31,6 @@ PAGE_SIZE = 3  # Number of items per page
 user_results = {}
 user_index = {}
 
-def send_limited_results(username, results, start_index=0):
-    """
-    Sends a message with a limited subset of results.
-    Each option has a button that sends a command to choose that option.
-    """
-    end_index = start_index + PAGE_SIZE
-    # Build message text with the current subset of results
-    message_text = "Here are some options:\n"
-    buttons = []  # Buttons for each option on the current page
-    for idx, item in enumerate(results[start_index:end_index], start=start_index + 1):
-        # Construct the display text for each option
-        name = item.get('properties', {}).get('name', 'Unnamed')
-        address = item.get('properties', {}).get('formatted', 'No address')
-        message_text += f"{idx}. {name} - {address}\n"
-        
-        # Create a button for this option
-        buttons.append({
-            "type": "button",
-            "text": f"Select {idx}",
-            "msg": f"!choose {username} {idx}",  # Use the absolute index
-            "msg_in_chat_window": True
-        })
-    
-    attachments = []
-    
-    # Add buttons for each option
-    if buttons:
-        attachments.append({
-            "text": "Please select an option:",
-            "actions": buttons
-        })
-    
-    # If there are more results, include a "Show More" button
-    if end_index < len(results):
-        attachments.append({
-            "text": "Not satisfied with these options?",
-            "actions": [
-                {
-                    "type": "button",
-                    "text": "Show More",
-                    "msg": f"!more {username} {end_index}",
-                    "msg_in_chat_window": True
-                }
-            ]
-        })
-    
-    payload = {
-        "channel": f"@{username}",
-        "text": message_text,
-        "attachments": attachments,
-        "msg_in_chat_window": True
-    }
-    
-    try:
-        response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-        response.raise_for_status()
-        print(f"Sent options to {username} starting from index {start_index}.")
-        return response.json()
-    except Exception as e:
-        print(f"Error sending message to {username}: {e}")
-        return {"error": str(e)}
-
-# Handler for the "Show More" command remains similar:
-def handle_show_more(message):
-    parts = message.split()
-    if len(parts) >= 3 and parts[0] == "!more":
-        username = parts[1]
-        try:
-            new_index = int(parts[2])
-        except ValueError:
-            new_index = user_index.get(username, 0)
-        
-        user_index[username] = new_index
-        results = user_results.get(username, [])
-        if results:
-            send_limited_results(username, results, start_index=new_index)
-        else:
-            print(f"No stored results for user {username}")
-
 def send_message_with_buttons(username, text, page=1):
     """Send a message with Yes/No buttons for plan confirmation."""
     payload = {
@@ -664,13 +585,10 @@ def send_calendar_to_planner(message, room_id):
                 print(f"An error occurred rejecting the confirmation: {e}")
                 return {"error": f"Error: {e}"}
 
-def redo_command(user, message, sess_id):
+def radius_command(user, message, sess_id):
     parts = message.split()
     confirmed_user = parts[1]
     command_type = parts[2]
-    if len(parts) < 3:
-        return {"error": "Invalid command format. Use `!redo username radius` or `!redo username activity`"}
-
     if command_type == "radius":
         print(f"Increasing search radius and redoing API call...")
         try: 
@@ -757,7 +675,15 @@ def redo_command(user, message, sess_id):
             print(f"An error occurred: {e}")
             response_text = "An error occurred while processing your request. Please try again later."
 
-    elif command_type == "activity":
+
+def redo_command(user, message, sess_id):
+    parts = message.split()
+    confirmed_user = parts[1]
+    command_type = parts[2]
+    if len(parts) < 3:
+        return {"error": "Invalid command format. Use `!redo username radius` or `!redo username activity`"}
+
+    if command_type == "activity":
         print("Fetching a new activity...")
         return
         # payload = {
@@ -818,7 +744,7 @@ def details_complete(response_text, user, sess_id, page=0):
                                 {
                                     "type": "button",
                                     "text": "⬆️ Search Radius",
-                                    "msg": f"!redo {user} radius",
+                                    "msg": f"!radius {user} radius",
                                     "msg_in_chat_window": True
                                 },
                                 {
@@ -836,10 +762,31 @@ def details_complete(response_text, user, sess_id, page=0):
                 return response_payload.json()
             
             # Save the full results and reset the current index for this user
-            user_results[user] = features
-            user_index[user] = 0
             # Display the first subset of results using our helper function
-            send_limited_results(user, features, start_index=0)
+
+            system_message = (
+                """Be friendly and give human readable text. Format the result of the API this so that it looks
+                as if they are catalog of choices. Remember the output of this query for future reference."""
+            )
+            response = generate(
+                model = '4o-mini',
+                system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
+                query = (
+                    f'''The following list of activities was generated based on an API call: {api_result.json()}.
+                    For clarity and future reference, please present them as numbered options.
+                    In subsequent requests, refer to these numbers for any follow-up actions.
+                    Right now, just show the first 4. Only show more when requested to. Do not
+                    restart the numbering if more are asked to be seen.'''
+                ),
+                temperature=0.3,
+                lastk=20,
+                session_id=sess_id
+            )
+            response_text = response['response']
+            print('LIST OF PLACES GENERATED')
+            print(response_text)
+ 
+            rocketchat_response = send_message_with_buttons(user, response_text)
         else:
             print("Error calling Geoapify API:", api_result.text)
             payload = {
@@ -907,11 +854,11 @@ def main():
         print("========CONFIRM_COMMAND DONE========")
         return jsonify({"status": "valid_confirmation"})
     
-    if message.startswith("!more"):
-        print("========HANDLE_SHOW_MORE START========")
-        handle_show_more(message)
-        print("========HANDLE_SHOW_MORE START========")
-        return jsonify({"status": "show_more_handled"})
+    # if message.startswith("!more"):
+    #     print("========HANDLE_SHOW_MORE START========")
+    #     handle_show_more(message)
+    #     print("========HANDLE_SHOW_MORE START========")
+    #     return jsonify({"status": "show_more_handled"})
         
     if message.startswith("!calendar"):
         print("========CALENDAR COMMAND START========")
@@ -929,6 +876,12 @@ def main():
     if message.startswith("!redo"): 
         print("========REDO COMMAND START========")
         redo_command(user, message, sess_id)
+        print("========REDO COMMAND DONE========")
+
+    if message.startswith("!radius"): 
+        print("========REDO COMMAND START========")
+        radius_command(user, message, sess_id)
+        return jsonify({"status": "larger_radius_search"})
         print("========REDO COMMAND DONE========")
 
     print('MESSAGE BEFORE THE QUERY:', message)
