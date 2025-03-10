@@ -42,8 +42,8 @@ def send_limited_results(username, results, start_index=0):
     buttons = []  # Buttons for each option on the current page
     for idx, item in enumerate(results[start_index:end_index], start=start_index + 1):
         # Construct the display text for each option
-        name = item.get('name', 'Unnamed')
-        address = item.get('address', 'No address')
+        name = item.get('properties', {}).get('name', 'Unnamed')
+        address = item.get('properties', {}).get('formatted', 'No address')
         message_text += f"{idx}. {name} - {address}\n"
         
         # Create a button for this option
@@ -1003,6 +1003,7 @@ def main():
         print("========DETAILS_COMPLETE STARTED========")
         details_complete(response_text, user, sess_id)   
         print("========DETAILS_COMPLETE COMMAND DONE========")     
+        return jsonify({"status": "details_complete"})
     else: 
         print(response_text)
         return jsonify({"text": response_text})
