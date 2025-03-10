@@ -457,6 +457,7 @@ def send_calendar_to_planner(message, room_id):
                 "and include only the ICS content without any additional commentary or explanation. " 
                 "Ensure you include mandatory fields such as BEGIN:VCALENDAR, VERSION, PRODID, BEGIN:VEVENT, UID, DTSTAMP, " 
                 "DTSTART, DTEND, and SUMMARY."
+                "Note that no line length should exceed 75 cgaracters."
             )
             query = (f"""
                     Using the previously generated event summary from our conversation context, generate a complete and valid iCalendar (ICS) document
@@ -465,6 +466,7 @@ def send_calendar_to_planner(message, room_id):
                     Set the location of the calendar event to the address of the location in the summary.
                     Set the time of the calendar event to the time of the hangout, using the current date as reference.
                     Output only the ICS content with no extra text.
+                    Follow valid ICS file format.
                     For reference, today's date and time is {datetime.now(ZoneInfo('America/New_York'))}.
                     """)
             response = generate(
