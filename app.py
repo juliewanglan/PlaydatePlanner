@@ -28,7 +28,109 @@ upload_headers = {
 }
 
 PAGE_SIZE = 3  # Number of items per page
-user_pages = {}
+user_results = {}
+user_index = {}
+
+def send_limited_results(username, results, start_index=0):
+    """
+    Sends a message with a limited subset of results.
+    Each option has a button that sends a command to choose that option.
+    """
+    end_index = start_index + PAGE_SIZE
+    # Build message text with the current subset of results
+    message_text = "Here are some options:\n"
+    buttons = []  # Buttons for each option on the current page
+    for idx, item in enumerate(results[start_index:end_index], start=start_index + 1):
+        # Construct the display text for each option
+        name = item.get('name', 'Unnamed')
+        address = item.get('address', 'No address')
+        message_text += f"{idx}. {name} - {address}\n"
+        
+        # Create a button for this option
+        buttons.append({
+            "type": "button",
+            "text": f"Select {idx}",
+            "msg": f"!choose {username} {idx}",  # Use the absolute index
+            "msg_in_chat_window": True
+        })
+    
+    attachments = []
+    
+    # Add buttons for each option
+    if buttons:
+        attachments.append({
+            "text": "Please select an option:",
+            "actions": buttons
+        })
+    
+    # If there are more results, include a "Show More" button
+    if end_index < len(results):
+        attachments.append({
+            "text": "Not satisfied with these options?",
+            "actions": [
+                {
+                    "type": "button",
+                    "text": "Show More",
+                    "msg": f"!more {username} {end_index}",
+                    "msg_in_chat_window": True
+                }
+            ]
+        })
+    
+    payload = {
+        "channel": f"@{username}",
+        "text": message_text,
+        "attachments": attachments,
+        "msg_in_chat_window": True
+    }
+    
+    try:
+        response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+        response.raise_for_status()
+        print(f"Sent options to {username} starting from index {start_index}.")
+        return response.json()
+    except Exception as e:
+        print(f"Error sending message to {username}: {e}")
+        return {"error": str(e)}
+
+# Handler for the "Show More" command remains similar:
+def handle_show_more(message):
+    parts = message.split()
+    if len(parts) >= 3 and parts[0] == "!more":
+        username = parts[1]
+        try:
+            new_index = int(parts[2])
+        except ValueError:
+            new_index = user_index.get(username, 0)
+        
+        user_index[username] = new_index
+        results = user_results.get(username, [])
+        if results:
+            send_limited_results(username, results, start_index=new_index)
+        else:
+            print(f"No stored results for user {username}")
+
+# New handler for the "Choose" command:
+def handle_choose(message):
+    parts = message.split()
+    if len(parts) >= 3 and parts[0] == "!choose":
+        username = parts[1]
+        try:
+            chosen_index = int(parts[2])
+        except ValueError:
+            print("Invalid index provided.")
+            return
+        
+        results = user_results.get(username, [])
+        if 0 < chosen_index <= len(results):
+            chosen_activity = results[chosen_index - 1]  # Adjust for zero-based indexing
+            # Process the chosen activity (e.g., confirm selection, show details, etc.)
+            print(f"User {username} chose option {chosen_index}: {chosen_activity}")
+            # You can send a confirmation message or trigger further processing here.
+        else:
+            print(f"Choice out of range for user {username}.")
+    else:
+        print("Invalid choose command format.")
 
 def send_message_with_buttons(username, text, page=1):
     """Send a message with Yes/No buttons for plan confirmation."""
@@ -695,88 +797,84 @@ def redo_command(user, message, sess_id):
     else:
         return {"error": "Invalid option. Use `radius` to expand the search or `activity` to try a new one."}
 
+
 def details_complete(response_text, user, sess_id, page=0):
-        print("ALL NECESSARY DETAILS")
-        try: 
-            activity = agent_activity(response_text)
-            location = agent_location(response_text)
-
-            params = {
-                "category": activity,
-                "bias": location,
-                "limit":10,
-                "apiKey":os.environ.get("geoapifyApiKey")
+    """
+    Called when all necessary details have been provided.
+    This function calls the Geoapify API with the extracted activity and location,
+    then stores and displays a limited subset of the results.
+    """
+    print("ALL NECESSARY DETAILS")
+    try: 
+        # Extract activity and location from the response
+        activity = agent_activity(response_text)
+        location = agent_location(response_text)
+        
+        # Set up parameters for the Geoapify API
+        params = {
+            "category": activity,
+            "bias": location,
+            "limit": 10,
+            "apiKey": os.environ.get("geoapifyApiKey")
+        }
+        
+        # Construct the API URL (using a circular filter with a 5000 meter radius here)
+        url = f"https://api.geoapify.com/v2/places?categories={params['category']}&filter=circle:{params['bias']},5000&limit={params['limit']}&apiKey={params['apiKey']}"
+        print("Calling Geoapify API:", url)
+        api_result = requests.get(url)
+        
+        if api_result.status_code == 200:
+            data_api = api_result.json()
+            print("Geoapify API response:", data_api)
+            features = data_api.get("features", [])
+            if not features:
+                print("No features found by the API.")
+                payload = {
+                    "channel": f"@{user}",
+                    "text": response_text,
+                    "attachments": [
+                        {
+                            "text": "No options were found. Would you like to increase the search radius or try a new activity?",
+                            "actions": [
+                                {
+                                    "type": "button",
+                                    "text": "⬆️ Search Radius",
+                                    "msg": f"!redo {user} radius",
+                                    "msg_in_chat_window": True
+                                },
+                                {
+                                    "type": "button",
+                                    "text": "🆕 Activity",
+                                    "msg": f"!redo {user} activity",
+                                    "msg_in_chat_window": True
+                                }
+                            ]
+                        }
+                    ]
+                }
+                response_payload = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+                response_payload.raise_for_status()
+                return response_payload.json()
+            
+            # Save the full results and reset the current index for this user
+            user_results[user] = features
+            user_index[user] = 0
+            # Display the first subset of results using our helper function
+            send_limited_results(user, features, start_index=0)
+        else:
+            print("Error calling Geoapify API:", api_result.text)
+            payload = {
+                "channel": f"@{user}",
+                "text": "Error retrieving location options. Please try again later."
             }
-
-            url = f"https://api.geoapify.com/v2/places?categories={params['category']}&filter=circle:{params['bias']},5000&limit=10&apiKey={params['apiKey']}"
-            api_result = requests.get(url)
-            print(url)
-            if api_result.status_code == 200:
-                data_api = api_result.json()
-                print('THIS IS THE API RESULT.JSON: ', data_api)
-                if len(data_api["features"]) == 0:
-                    print("No features generated by the API.")
-                    payload = {
-                        "channel": f"@{user}",
-                        "text": response_text,
-                        "attachments": [
-                            {
-                                "text": "No options were found, would you like to increase the search redius or try a new activity?",
-                                "actions": [
-                                    {
-                                        "type": "button",
-                                        "text": "⬆️ Search Radius",
-                                        "msg": f"!redo {user} radius",
-                                        "msg_in_chat_window": True
-                                    },
-                                    {
-                                        "type": "button",
-                                        "text": "🆕 Activity",
-                                        "msg": f"!redo {user} activity",
-                                        "msg_in_chat_window": True
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                    try:
-                        # Send the message with buttons to Rocket.Chat
-                        response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-                        response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
-                        return response.json()  # Return the JSON response if successful
-                    except Exception as e:
-                        # Handle any other unexpected errors
-                        return {"error": f"Unexpected error: {e}"}
-
-                
-            else:
-                print("Error calling Geoapify API")
-
-            response = generate(
-                model='4o-mini',
-                system='Be friendly and produce a clear, nicely formatted list.\
-                        Format the output in markdown, using numbered items and \
-                        bullet points (or emojis) to make it visually appealing.\
-                        Make sure it looks clean.',
-                query=(
-                    f'''Based on the API response: {api_result.json()},
-                    please present the list of activities as a clean, well-organized numbered list.
-                    Each item should be on its own line, and feel free to add a suitable emoji for each option.
-                    In subsequent requests, refer to these numbers for follow-up actions.'''
-                ),
-                temperature=0.3,
-                lastk=20,
-                session_id=sess_id
-            )
-            response_text = response['response']
-            print('LIST OF PLACES GENERATED')
-            print(response_text)
-
-            rocketchat_response = send_message_with_buttons(user, api_result.json())
-        except Exception as e:
-            # Log the error and update response_text with a generic error message
-            print(f"An error occurred: {e}")
-            response_text = "An error occurred while processing your request. Please try again later."
+            requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+    except Exception as e:
+        print(f"An error occurred in details_complete: {e}")
+        payload = {
+            "channel": f"@{user}",
+            "text": "An error occurred while processing your request. Please try again later."
+        }
+        requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
 
 @app.route('/', methods=['POST'])
 def hello_world():
@@ -829,6 +927,18 @@ def main():
         confirm_command(message)
         print("========CONFIRM_COMMAND DONE========")
         return jsonify({"status": "valid_confirmation"})
+    
+    if message.startswith("!more"):
+        print("========HANDLE_SHOW_MORE START========")
+        handle_show_more(message)
+        print("========HANDLE_SHOW_MORE START========")
+        return jsonify({"status": "show_more_handled"})
+
+    if message.startswith("!choose"):
+        print("========HANDLE_CHOOSE START========")
+        handle_choose(message)
+        print("========HANDLE_CHOOSE START========")
+        return jsonify({"status": "option_chosen"})
 
         
     if message.startswith("!calendar"):
