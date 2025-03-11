@@ -32,31 +32,31 @@ def send_message_with_buttons(parts, username, text):
     actions = []
     # Dynamically create a button for each available response.
     # If you need a minimum of 4 buttons, you can add a fallback button.
-    for idx, (activity, emoji) in enumerate(parts):
+    for idx in range(parts):
         actions.append({
             "type": "button",
-            "text": f"{emoji} {activity.capitalize()}",
-            "msg": f"The activity category chosen is: {activity}",
+            "text": f"{idx}",
+            "msg": f"The chosen place is: {idx}",
             "msg_in_chat_window": True,
             "style": "primary"
         })
 
-    # Optionally, add a fallback if there are fewer than 4 options.
-    if len(actions) < 4:
-        actions.append({
-            "type": "button",
-            "text": "More options",
-            "msg": "No more options available.",
-            "msg_in_chat_window": True,
-            "style": "default"
-        })
+    # # Optionally, add a fallback if there are fewer than 4 options.
+    # if len(actions) < 4:
+    #     actions.append({
+    #         "type": "button",
+    #         "text": "More options",
+    #         "msg": "No more options available.",
+    #         "msg_in_chat_window": True,
+    #         "style": "default"
+    #     })
 
     payload = {
         "channel": f"@{username}",
         "text": text,
         "attachments": [
             {
-                "text": "Which option do you like? Please respond with just the corresponding number.",
+                "text": "Which option do you like?",
                 "actions": actions
             }
         ]
