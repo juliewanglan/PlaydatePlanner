@@ -633,7 +633,7 @@ def radius_command(user, message, sess_id):
             print('LIST OF PLACES GENERATED')
             print(response_text)
 
-            rocketchat_response = send_message_with_buttons(parts, user, response_text)
+            rocketchat_response = send_message_with_buttons(parts=parts, username=user, text=response_text)
             return jsonify({"status": "redo_search"})
         except Exception as e:
             # Log the error and update response_text with a generic error message
@@ -778,7 +778,7 @@ def details_complete(room_id, response_text, user, sess_id, page=0):
             print('LIST OF PLACES GENERATED')
             print(response_text)
  
-            rocketchat_response = send_message_with_buttons(user, response_text)
+            rocketchat_response = send_message_with_buttons(parts=parts, username=user, text=response_text)
         else:
             print("Error calling Geoapify API:", api_result.text)
             payload = {
