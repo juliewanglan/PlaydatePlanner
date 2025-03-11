@@ -29,13 +29,14 @@ upload_headers = {
 
 def send_message_with_buttons(parts, options, username, text):
     """Send a message with Yes/No buttons for plan confirmation."""
+    print(options)
     actions = []
     # Dynamically create a button for each available response.
     # If you need a minimum of 4 buttons, you can add a fallback button.
-    for idx, options in enumerate(options):
+    for idx, name in enumerate(options):
         actions.append({
             "type": "button",
-            "text": f"{options[idx + 1]}",
+            "text": name,
             "msg": f"{idx + 1}",
             "msg_in_chat_window": True,
             "style": "primary"
