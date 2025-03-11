@@ -46,7 +46,7 @@ def send_message_with_buttons(parts, options, username, text):
         actions.append({
             "type": "button",
             "text": "See more options",
-            "msg": f"!more",
+            "msg": f"!more options",
             "msg_in_chat_window": True,
             "style": "primary"
         })
@@ -661,6 +661,56 @@ def format_api(sess_id, api_result, user):
     rocketchat_response = send_message_with_buttons(parts=responses_no, options=options, username=user, text=response_text)
     return jsonify({"status": "redo_search"})
 
+def show_more_options(user, sess_id):
+    system_message = (
+        """You are a friendly assistant that formats API responses as a catalog of choices.
+        Given a list of activities, output:
+        1. On the first line, list the number of results the API returned.
+        2. On the second line, only list the names of the options you are presenting, separated by commas.
+        3. On the following lines, list each option on its own line and the details.
+        Do not include any extra commentary or headings.
+        Format everything nicely"""
+    )
+    response = generate(
+        model = '4o-mini',
+        system = system_message,
+        query = (
+            f'''You have already returned the first four activities. Now, show the rest (excluding the ones you have shown).
+            Please format the output so that:
+                - The first line is only the count of items in the list in total (the amount of item that resulted from the API call). No other information or text on this line. Just the number.
+                - Immediately after a new line, the second line should include the names of the options that are being displayed to the user (such an first four), each seperated with a comma. No other information on this line.
+                - Immediately after a newline, starting on the third line, list the options with all relevant details and a description.
+            Only include the options provided and nothing else.
+
+            In subsequent requests, refer to these items for any follow-up actions.'''
+        ),
+        temperature=0.3,
+        lastk=20,
+        session_id=sess_id
+    )
+    response_text = response['response']
+
+    print('nonstripped list')
+    print(response_text)
+
+    # parts = response_text.split()
+    # responses_no = int(parts[0])
+    lines = response_text.splitlines()
+    responses_no = int(lines[0].strip())
+    options = []
+    # Reassemble the output without the first line (the number and its newline)
+    if len(lines) > 1:
+        options = [opt.strip() for opt in lines[1].split(',')]
+        response_text = "\n".join(lines[2:])
+    else:
+        response_text = ""
+    print('LIST OF PLACES GENERATED')
+    print(response_text)
+
+    rocketchat_response = send_message_with_buttons(parts=0, options=options, username=user, text=response_text)
+    return jsonify({"status": "more_options_shown"})
+
+
 def redo_command(user, message, sess_id):
     parts = message.split()
     confirmed_user = parts[1]
@@ -823,9 +873,14 @@ def main():
     if message.startswith("!place"):
         print("========HANDLE_SHOW_MORE START========")
         activity_chosen(message, user, sess_id)
-        print("========HANDLE_SHOW_MORE START========")
+        print("========HANDLE_SHOW_MORE DONE========")
         return jsonify({"status": "show_more_handled"})
-        
+    
+    if message.startswith("!more options"):
+        print("======== START========")
+        show_more_options(user=user, sess_id=sess_id)
+        print("======== DONE========")
+
     if message.startswith("!calendar"):
         print("========CALENDAR COMMAND START========")
         send_calendar_to_recipient(message, room_id)
