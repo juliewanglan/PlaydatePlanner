@@ -665,7 +665,8 @@ def details_complete(response_text, user, sess_id, page=0):
 
     payload_initial = {
         "channel": f"@{user}",
-        "text": "🔍 Gathering details... Hang tight while I process your request!"
+        "text": "🔍 Gathering details... Hang tight while I process your request!",
+        "typing": True
     }
     requests.post(ROCKETCHAT_URL, json=payload_initial, headers=HEADERS)
     
@@ -724,16 +725,22 @@ def details_complete(response_text, user, sess_id, page=0):
             # Display the first subset of results using our helper function
 
             system_message = (
-                """Be friendly and give human readable text. Format the result of the API this so that it looks
-                as if they are catalog of choices. Include relevant details for users to make
-                 a choice on which place htey would like to choose. Remember the output of this query for future reference."""
+                """You are a friendly assistant that formats API responses as a catalog of choices.
+                Given a list of activities, output:
+                1. On the first line, only the number of items provided.
+                2. On the following lines, list each option on its own line prefixed with its number (starting at 1) and the details.
+                Do not include any extra commentary or headings."""
             )
             response = generate(
                 model = '4o-mini',
                 system = system_message,
                 query = (
-                    f'''The following list of activities was generated based on an API call: {api_result.json()}.
-                    For clarity and future reference, please present them as numbered options.
+                    f'''The following list of activities was generated from an API call: {api_result.json()}.
+                    Please format the output so that:
+                        - The first line is only the count of items in the list.
+                        - Immediately after a newline, list the options as numbered choices with all relevant details.
+                    Only include the options provided and nothing else.
+
                     In subsequent requests, refer to these numbers for any follow-up actions.
                     Right now, just show the first 4. Only show more when requested to. Do not
                     restart the numbering if more are asked to be seen.'''
