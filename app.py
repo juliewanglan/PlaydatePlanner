@@ -142,6 +142,18 @@ def send_plan_to_friend(friend_username, username, plan_text):
         print(f"An unexpected error occurred while sending message to {username}: {e}")
         return {"error": f"Unexpected error: {e}"}
 
+def send_typing_indicator(room_id):
+    payload = {
+        "roomId": room_id,
+        "typing": True
+    }
+    try:
+        response = requests.post(f"{API_BASE_URL}/chat.sendTyping", json=payload, headers=HEADERS)
+        response.raise_for_status()
+        print("Typing indicator sent.")
+    except Exception as e:
+        print(f"Error sending typing indicator: {e}")
+
 def send_activity_suggestions(user):
     # Pair each suggestion with an emoji for a more visual presentation
     suggestions = [
@@ -656,7 +668,7 @@ def redo_command(user, message, sess_id):
         return {"error": "Invalid option. Use `radius` to expand the search or `activity` to try a new one."}
 
 
-def details_complete(response_text, user, sess_id, page=0):
+def details_complete(room_id, response_text, user, sess_id, page=0):
     """
     Called when all necessary details have been provided.
     This function calls the Geoapify API with the extracted activity and location,
@@ -667,10 +679,9 @@ def details_complete(response_text, user, sess_id, page=0):
     payload_initial = {
         "channel": f"@{user}",
         "text": "🔍 Gathering details... Hang tight while I process your request!",
-        "typing": True
     }
     requests.post(ROCKETCHAT_URL, json=payload_initial, headers=HEADERS)
-    
+    send_typing_indicator(room_id)
     try: 
         # Extract activity and location from the response
         activity = agent_activity(response_text)
@@ -906,7 +917,7 @@ def main():
 
     if "All necessary details completed" in response_text:
         print("========DETAILS_COMPLETE STARTED========")
-        details_complete(response_text, user, sess_id)   
+        details_complete(room_id, response_text, user, sess_id)   
         print("========DETAILS_COMPLETE COMMAND DONE========")     
         return jsonify({"status": "details_complete"})
     else: 
