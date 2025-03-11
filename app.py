@@ -27,26 +27,47 @@ upload_headers = {
     "X-User-Id": os.environ.get("RC_userId") #Replace with your bot user id for local testing or keep it and store secrets in Koyeb
 }
 
-def send_message_with_buttons(username, text, page=1):
+def send_message_with_buttons(parts, username, text):
     """Send a message with Yes/No buttons for plan confirmation."""
+    actions = []
+    # Dynamically create a button for each available response.
+    # If you need a minimum of 4 buttons, you can add a fallback button.
+    for idx, (activity, emoji) in enumerate(parts):
+        actions.append({
+            "type": "button",
+            "text": f"{emoji} {activity.capitalize()}",
+            "msg": f"The activity category chosen is: {activity}",
+            "msg_in_chat_window": True,
+            "style": "primary"
+        })
+
+    # Optionally, add a fallback if there are fewer than 4 options.
+    if len(actions) < 4:
+        actions.append({
+            "type": "button",
+            "text": "More options",
+            "msg": "No more options available.",
+            "msg_in_chat_window": True,
+            "style": "default"
+        })
+
     payload = {
         "channel": f"@{username}",
         "text": text,
         "attachments": [
             {
                 "text": "Which option do you like? Please respond with just the corresponding number.",
+                "actions": actions
             }
         ]
     }
 
     try:
-        # Send the message with buttons to Rocket.Chat
         response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-        response.raise_for_status()  # Raise an exception for HTTP errors (4xx, 5xx)
-        print(f"which option do you like the most is sent to {username}.")
-        return response.json()  # Return the JSON response if successful
+        response.raise_for_status()
+        print(f"Message with buttons sent to {username}.")
+        return response.json()
     except Exception as e:
-        # Handle any other unexpected errors
         print(f"An unexpected error occurred while sending message to {username}: {e}")
         return {"error": f"Unexpected error: {e}"}
 
@@ -584,10 +605,22 @@ def radius_command(user, message, sess_id):
                 session_id=sess_id
             )
             response_text = response['response']
+
+            print('nonstripped list')
+            print(response_text)
+
+            parts = response_text.split()
+            responses_no = int(parts[0])
+            lines = response_text.splitlines()
+            # Reassemble the output without the first line (the number and its newline)
+            if len(lines) > 1:
+                response_text = "\n".join(lines[1:])
+            else:
+                response_text = ""
             print('LIST OF PLACES GENERATED')
             print(response_text)
 
-            rocketchat_response = send_message_with_buttons(user, response_text)
+            rocketchat_response = send_message_with_buttons(parts, user, response_text)
             return jsonify({"status": "redo_search"})
         except Exception as e:
             # Log the error and update response_text with a generic error message
@@ -710,6 +743,18 @@ def details_complete(response_text, user, sess_id, page=0):
                 session_id=sess_id
             )
             response_text = response['response']
+            
+            print('nonstripped list')
+            print(response_text)
+
+            parts = response_text.split()
+            responses_no = int(parts[0])
+            lines = response_text.splitlines()
+            # Reassemble the output without the first line (the number and its newline)
+            if len(lines) > 1:
+                response_text = "\n".join(lines[1:])
+            else:
+                response_text = ""
             print('LIST OF PLACES GENERATED')
             print(response_text)
  
