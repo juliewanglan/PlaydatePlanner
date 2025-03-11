@@ -835,11 +835,13 @@ def main():
     
     print("message length", len(message.split()[0]) == 1)
     print(message.split())
+
     if (len(message.split()) == 1) and message.split()[0].isdigit():
         print("========ACTIVITY_CHOSEN START========")
         activity_chosen(message, user, sess_id)
         print("========ACTIVITY_CHOSEN DONE========")
         return jsonify({"status": "activity_chosen"})
+    
     if (len(message.split()) == 1) and is_valid_username(message.split()[0]):
         print("========REGENERATE_SUMMARY START========")
         plan_text = regenerate_summary(sess_id)
@@ -891,10 +893,10 @@ def main():
     query = (
         "You are an aide to make hangout plans, a friendly assistant helping users plan a hangout. "
         "Your goal is to obtain all of the following details from the user: location, date, specific time, and activity. "
-        "If any one of these details is missing, ask a clear and direct clarifying question about that specific missing detail. "
+        "If any one of these details is missing, ask a clear and direct question for that specific missing detail. "
         "Do not produce a final summary until you have all the required details. "
         "If the user inputs information that they have already given (changed their mind), rewrite over the previous information for that specific detail"
-        "Do not ask for clarification or for information that you have already received"
+        "Do not ask for clarification for information that you have already received."
         "Only when all details are provided, respond with exactly: 'All necessary details completed:' followed by a summary of the plan. "
         f"This is the user's next message: {message}"
     )
@@ -1038,6 +1040,8 @@ def agent_detect_intent(query):
                 Respond with a single number and just a single number. Respond with '1'
                 if the user is asking for suggestions for an activity or is not sure 
                 what to do as an activity. Otherwise, return '2'.
+                Any vague idea of an activity (e.g., restaurant) counts as an activity and
+                thus you can return '2'.
                 If the user is stating an activity and not asking for a recommendation, return '2'.
             """)
     intent_response = generate(
