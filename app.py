@@ -843,13 +843,6 @@ def main():
         return jsonify({"status": "ignored"})
 
     print(f"Message from {user} : {message}")
-
-    intent = agent_detect_intent(message)
-    if intent == "1":
-        print("========SEND_ACTIVITY_SUGGESTIONS START========")
-        send_activity_suggestions(user)
-        print("========SEND_ACTIVITY_SUGGESTIONS DONE========")
-        return jsonify({"status": "activity_suggestions"})
     
     print("message length", len(message.split()[0]) == 1)
     print(message.split())
@@ -886,7 +879,6 @@ def main():
         send_calendar_to_recipient(message, room_id)
         print("========CALENDAR COMMAND DONE========")
         return jsonify({"status": "calendar_sent"})
-        
 
     if message.startswith("!final"):
         print("========SEND CALENDAR TO PLANNER FINAL COMMAND START ========")
@@ -904,6 +896,14 @@ def main():
         radius_command(user, message, sess_id)
         return jsonify({"status": "larger_radius_search"})
         print("========REDO COMMAND DONE========")
+    
+    intent = agent_detect_intent(message)
+    if intent == "1":
+        print("========SEND_ACTIVITY_SUGGESTIONS START========")
+        send_activity_suggestions(user)
+        print("========SEND_ACTIVITY_SUGGESTIONS DONE========")
+        return jsonify({"status": "activity_suggestions"})
+
 
     print('MESSAGE BEFORE THE QUERY:', message)
 
