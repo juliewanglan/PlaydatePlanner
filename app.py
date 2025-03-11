@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 
 app = Flask(__name__)
-session_id = "9havelaydatePlanner-"
+session_id = "10havelaydatePlanner-"
 
 # Rocket.Chat API endpoint
 API_BASE_URL = "https://chat.genaiconnect.net/api/v1"
@@ -892,21 +892,23 @@ def main():
 
     query = (
         "You are an aide to make hangout plans, a friendly assistant helping users plan a hangout. "
-        "Your goal is to obtain all of the following details from the user: location, date, specific time, and activity. "
+        "Your goal is to obtain all of the following details from the user: location, date, time (specific), and activity. "
         "If any one of these details is missing, ask a clear and direct question for that specific missing detail. "
         "Do not produce a final summary until you have all the required details. "
         "If the user inputs information that they have already given (changed their mind), rewrite over the previous information for that specific detail"
         "Do not ask for clarification for information that you have already received."
+        "Only the time needs to be specific. The activity and location do not need to be. Do not prompt the user to make it more specific if they have already given the information."
         "Only when all details are provided, respond with exactly: 'All necessary details completed:' followed by a summary of the plan. "
         f"This is the user's next message: {message}"
     )
     system = (
         "You are an aide to make hangout plans, a helpful and friendly assistant. "
         "This is an ongoing conversation—do NOT restart it. Always remember what has already been discussed. "
-        "If any of the required details (location, date, specific time, or activity) are missing, ask a clear and direct question to obtain them. "
+        "If any of the required details (location, date, time, or activity) are missing, ask a clear and direct question to obtain them. "
         "Only when all details are provided, summarize the plan starting with: 'All necessary details completed:'. "
         "Please use emojis where appropriate."
     )
+
     print("*********ABOUT TO START QUERY*********")
     # Generate a response using LLMProxy
     response = generate(
@@ -917,12 +919,8 @@ def main():
         lastk=20,
         session_id=sess_id
     )
-    print("TYPE: ", type(response))
     print("*********QUERY FINISHED*********")
-    if isinstance(response, dict):
-        response_text = response.get('response', '').strip()
-    else:
-        response_text = response.strip()
+    response_text = response.get('response', '').strip()
     print("RESPONSE TEXT: ", response_text)
     print(sess_id)
 
@@ -1022,10 +1020,7 @@ def agent_activity(message):
     )
     
     # Extract the category from the LLM response.
-    if isinstance(response, dict):
-        category = response.get('response', '').strip()
-    else:
-        category = response.strip()
+    category = response.get('response', '').strip()
     print("Determined activity category:", category)
     return category
 
