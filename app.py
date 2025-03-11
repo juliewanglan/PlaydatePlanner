@@ -591,8 +591,9 @@ def radius_command(user, message, sess_id):
                 system = system_message,
                 query = (
                     f'''The following list of activities was generated from an API call: {api_result.json()}.
+                    Only print the first 4 to start (if there are 4).
                     Please format the output so that:
-                        - The first line is only the count of items in the list.
+                        - The first line is only the count of items in the list (not the limit of the API call, but the amount received and printed).
                         - Immediately after a newline, list the options as numbered choices with all relevant details.
                     Only include the options provided and nothing else.
 
@@ -736,8 +737,9 @@ def details_complete(response_text, user, sess_id, page=0):
                 system = system_message,
                 query = (
                     f'''The following list of activities was generated from an API call: {api_result.json()}.
+                    Only print the first 4 to start (if there are 4).
                     Please format the output so that:
-                        - The first line is only the count of items in the list.
+                        - The first line is only the count of items in the list (not the limit of the API call, but the amount received and printed).
                         - Immediately after a newline, list the options as numbered choices with all relevant details.
                     Only include the options provided and nothing else.
 
