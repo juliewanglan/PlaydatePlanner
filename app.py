@@ -27,15 +27,15 @@ upload_headers = {
     "X-User-Id": os.environ.get("RC_userId") #Replace with your bot user id for local testing or keep it and store secrets in Koyeb
 }
 
-def send_message_with_buttons(parts, username, text):
+def send_message_with_buttons(parts, options, username, text):
     """Send a message with Yes/No buttons for plan confirmation."""
     actions = []
     # Dynamically create a button for each available response.
     # If you need a minimum of 4 buttons, you can add a fallback button.
-    for idx in range(parts):
+    for idx, options in enumerate(options):
         actions.append({
             "type": "button",
-            "text": f"{idx + 1}",
+            "text": f"{options[idx + 1]}",
             "msg": f"{idx + 1}",
             "msg_in_chat_window": True,
             "style": "primary"
@@ -429,7 +429,7 @@ def send_calendar_to_planner(message, room_id):
             ics_content = ical_content.replace("\n", "\r\n")
             ics_content = ics_content.strip()
 
-            lines = ics_content.split("\r\n")
+            lines = ics_content.split("\n")
             cleaned_lines = [line.rstrip() for line in lines]  # Remove trailing whitespace from each line
             ics_content = "\r\n".join(cleaned_lines)
 
@@ -587,59 +587,67 @@ def radius_command(user, message, sess_id):
                         return {"error": f"Unexpected error: {e}"}
 
                 print("Geoapify API response:", data_api)
+                format_api(sess_id=sess_id, api_result=api_result, user=user)
             else:
                 print("Error calling Geoapify API")
-
-            system_message = (
-                """You are a friendly assistant that formats API responses as a catalog of choices.
-                Given a list of activities, output:
-                1. On the first line, only the number of items provided.
-                2. On the following lines, list each option on its own line prefixed with its number (starting at 1) and the details.
-                Do not include any extra commentary or headings.
-                Format everything nicely"""
-            )
-            response = generate(
-                model = '4o-mini',
-                system = system_message,
-                query = (
-                    f'''The following list of activities was generated from an API call: {api_result.json()}.
-                    Only print the first 4 to start (if there are 4).
-                    Please format the output so that:
-                        - The first line is only the count of items in the list (not the limit of the API call, but the amount received and printed).
-                        - Immediately after a newline, list the options as numbered choices with all relevant details and a description.
-                    Only include the options provided and nothing else.
-
-                    In subsequent requests, refer to these numbers for any follow-up actions.
-                    Right now, just show the first 4. Only show more when requested to. Do not
-                    restart the numbering if more are asked to be seen.'''
-                ),
-                temperature=0.3,
-                lastk=20,
-                session_id=sess_id
-            )
-            response_text = response['response']
-
-            print('nonstripped list')
-            print(response_text)
-
-            parts = response_text.split()
-            responses_no = int(parts[0])
-            lines = response_text.splitlines()
-            # Reassemble the output without the first line (the number and its newline)
-            if len(lines) > 1:
-                response_text = "\n".join(lines[1:])
-            else:
-                response_text = ""
-            print('LIST OF PLACES GENERATED')
-            print(response_text)
-
-            rocketchat_response = send_message_with_buttons(parts=responses_no, username=user, text=response_text)
+            
             return jsonify({"status": "redo_search"})
+
         except Exception as e:
             # Log the error and update response_text with a generic error message
             print(f"An error occurred: {e}")
             response_text = "An error occurred while processing your request. Please try again later."
 
+def format_api(sess_id, api_result, user):
+    system_message = (
+        """You are a friendly assistant that formats API responses as a catalog of choices.
+        Given a list of activities, output:
+        1. On the first line, only the number of items provided.
+        2. On the second line, only list the names of the options separated by commas.
+        3. On the following lines, list each option on its own line prefixed with its number (starting at 1) and the details.
+        Do not include any extra commentary or headings.
+        Format everything nicely"""
+    )
+    response = generate(
+        model = '4o-mini',
+        system = system_message,
+        query = (
+            f'''The following list of activities was generated from an API call: {api_result.json()}.
+            Only print the first 4 to start (if there are 4).
+            Please format the output so that:
+                - The first line is only the count of items in the list (not the limit of the API call, but the amount received and printed).
+                - Immediately after a new line, the second line should include the names of the options that are listed, each seperated with a comma. No other information on this line.
+                - Immediately after a newline, starting on the third line, list the options as numbered choices with all relevant details and a description.
+            Only include the options provided and nothing else.
+
+            In subsequent requests, refer to these numbers for any follow-up actions.
+            Right now, just show the first 4. Only show more when requested to. Do not
+            restart the numbering if more are asked to be seen.'''
+        ),
+        temperature=0.3,
+        lastk=20,
+        session_id=sess_id
+    )
+    response_text = response['response']
+
+    print('nonstripped list')
+    print(response_text)
+
+    parts = response_text.split()
+    responses_no = int(parts[0])
+    lines = response_text.splitlines()
+    options = []
+    # Reassemble the output without the first line (the number and its newline)
+    if len(lines) > 1:
+        options = [opt.strip() for opt in lines[1].split(',')]
+        response_text = "\n".join(lines[2:])
+    else:
+        response_text = ""
+    print('LIST OF PLACES GENERATED')
+    print(response_text)
+
+    rocketchat_response = send_message_with_buttons(parts=responses_no, options=options, username=user, text=response_text)
+    return jsonify({"status": "redo_search"})
 
 def redo_command(user, message, sess_id):
     parts = message.split()
@@ -735,53 +743,7 @@ def details_complete(room_id, response_text, user, sess_id, page=0):
             
             # Save the full results and reset the current index for this user
             # Display the first subset of results using our helper function
-
-            system_message = (
-                """You are a friendly assistant that formats API responses as a catalog of choices.
-                Given a list of activities, output:
-                1. On the first line, only the number of items provided.
-                2. On the following lines, list each option on its own line prefixed with its number (starting at 1) and the details.
-                Do not include any extra commentary or headings.
-                Format everything nicely"""
-            )
-            response = generate(
-                model = '4o-mini',
-                system = system_message,
-                query = (
-                    f'''The following list of activities was generated from an API call: {api_result.json()}.
-                    Only print the first 4 to start (if there are 4).
-                    Please format the output so that:
-                        - The first line is only the count of items in the list (not the limit of the API call, but the amount received and printed).
-                        - Immediately after a newline, list the options as numbered choices with all relevant details and a description.
-                    Only include the options provided and nothing else.
-
-                    In subsequent requests, refer to these numbers for any follow-up actions.
-                    Right now, just show the first 4. Only show more when requested to. Do not
-                    restart the numbering if more are asked to be seen.'''
-                ),
-                temperature=0.3,
-                lastk=20,
-                session_id=sess_id
-            )
-            response_text = response['response']
-            
-            print('nonstripped list')
-            print(response_text)
-
-            parts = response_text.split()
-            responses_no = int(parts[0])
-            print(responses_no)
-            print(type(responses_no))
-            lines = response_text.splitlines()
-            # Reassemble the output without the first line (the number and its newline)
-            if len(lines) > 1:
-                response_text = "\n".join(lines[1:])
-            else:
-                response_text = ""
-            print('LIST OF PLACES GENERATED')
-            print(response_text)
- 
-            rocketchat_response = send_message_with_buttons(parts=responses_no, username=user, text=response_text)
+            format_api(sess_id=sess_id, api_result=api_result, user=user)
         else:
             print("Error calling Geoapify API:", api_result.text)
             payload = {
@@ -796,6 +758,7 @@ def details_complete(room_id, response_text, user, sess_id, page=0):
             "text": "An error occurred while processing your request. Please try again later."
         }
         requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
+    return jsonify({"status": "details_complete"})
 
 @app.route('/', methods=['POST'])
 def hello_world():
