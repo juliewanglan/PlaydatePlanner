@@ -37,7 +37,16 @@ def send_message_with_buttons(parts, options, username, text):
         actions.append({
             "type": "button",
             "text": name,
-            "msg": f"{idx + 1}",
+            "msg": f"!place {name}",
+            "msg_in_chat_window": True,
+            "style": "primary"
+        })
+
+    if parts > 4:
+        actions.append({
+            "type": "button",
+            "text": "See more options",
+            "msg": f"!more",
             "msg_in_chat_window": True,
             "style": "primary"
         })
@@ -212,12 +221,14 @@ def confirm_command(message):
     return jsonify({"status": "invalid_confirmation"})
 
 def activity_chosen(message, user, sess_id):
+    parts = message.split()
+    place = parts[1:]
     response = generate(
         model = '4o-mini',
         system = 'Give human readable text and be friendly',
         query = (
             f"""There is a previously generated API list of activities.
-            The user selected activity number {message.split()[0]} from that list.
+            The user selected the place {place} from that list.
             Please provide a detailed, human-readable summary of this activity or place, including key details.
             **Only** include the numbered place.
             In this summary, pleae also include the previously discussed time.
@@ -603,9 +614,9 @@ def format_api(sess_id, api_result, user):
     system_message = (
         """You are a friendly assistant that formats API responses as a catalog of choices.
         Given a list of activities, output:
-        1. On the first line, only the number of items provided.
-        2. On the second line, only list the names of the options separated by commas.
-        3. On the following lines, list each option on its own line prefixed with its number (starting at 1) and the details.
+        1. On the first line, list the number of results the API returned.
+        2. On the second line, only list the names of the options you are presenting, separated by commas.
+        3. On the following lines, list each option on its own line and the details.
         Do not include any extra commentary or headings.
         Format everything nicely"""
     )
@@ -616,14 +627,13 @@ def format_api(sess_id, api_result, user):
             f'''The following list of activities was generated from an API call: {api_result.json()}.
             Only print the first 4 to start (if there are 4).
             Please format the output so that:
-                - The first line is only the count of items in the list (not the limit of the API call, but the amount received and printed).
-                - Immediately after a new line, the second line should include the names of the options that are listed, each seperated with a comma. No other information on this line.
-                - Immediately after a newline, starting on the third line, list the options as numbered choices with all relevant details and a description.
+                - The first line is only the count of items in the list in total (the amount of item that resulted from the API call). No other information or text on this line. Just the number.
+                - Immediately after a new line, the second line should include the names of the options that are being displayed to the user (such an first four), each seperated with a comma. No other information on this line.
+                - Immediately after a newline, starting on the third line, list the options with all relevant details and a description.
             Only include the options provided and nothing else.
 
-            In subsequent requests, refer to these numbers for any follow-up actions.
-            Right now, just show the first 4. Only show more when requested to. Do not
-            restart the numbering if more are asked to be seen.'''
+            In subsequent requests, refer to these items for any follow-up actions.
+            Right now, just show the first 4. Only show more when requested to.'''
         ),
         temperature=0.3,
         lastk=20,
@@ -634,9 +644,10 @@ def format_api(sess_id, api_result, user):
     print('nonstripped list')
     print(response_text)
 
-    parts = response_text.split()
-    responses_no = int(parts[0])
+    # parts = response_text.split()
+    # responses_no = int(parts[0])
     lines = response_text.splitlines()
+    responses_no = int(lines[0].strip())
     options = []
     # Reassemble the output without the first line (the number and its newline)
     if len(lines) > 1:
@@ -792,12 +803,6 @@ def main():
     
     print("message length", len(message.split()[0]) == 1)
     print(message.split())
-
-    if (len(message.split()) == 1) and message.split()[0].isdigit():
-        print("========ACTIVITY_CHOSEN START========")
-        activity_chosen(message, user, sess_id)
-        print("========ACTIVITY_CHOSEN DONE========")
-        return jsonify({"status": "activity_chosen"})
     
     if (len(message.split()) == 1) and is_valid_username(message.split()[0]):
         print("========REGENERATE_SUMMARY START========")
@@ -815,11 +820,11 @@ def main():
         print("========CONFIRM_COMMAND DONE========")
         return jsonify({"status": "valid_confirmation"})
     
-    # if message.startswith("!more"):
-    #     print("========HANDLE_SHOW_MORE START========")
-    #     handle_show_more(message)
-    #     print("========HANDLE_SHOW_MORE START========")
-    #     return jsonify({"status": "show_more_handled"})
+    if message.startswith("!place"):
+        print("========HANDLE_SHOW_MORE START========")
+        activity_chosen(message, user, sess_id)
+        print("========HANDLE_SHOW_MORE START========")
+        return jsonify({"status": "show_more_handled"})
         
     if message.startswith("!calendar"):
         print("========CALENDAR COMMAND START========")
@@ -997,6 +1002,7 @@ def agent_detect_intent(query):
                 thus you can return '2'.
                 If the user is stating an activity and not asking for a recommendation, return '2'.
                 Be very sparing in returning '1', in most instances you will return '2'.
+                Only if the user asks for a suggestion should you return '2'.
             """)
     intent_response = generate(
         model='4o-mini',
