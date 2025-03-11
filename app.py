@@ -27,10 +27,6 @@ upload_headers = {
     "X-User-Id": os.environ.get("RC_userId") #Replace with your bot user id for local testing or keep it and store secrets in Koyeb
 }
 
-PAGE_SIZE = 3  # Number of items per page
-user_results = {}
-user_index = {}
-
 def send_message_with_buttons(username, text, page=1):
     """Send a message with Yes/No buttons for plan confirmation."""
     payload = {
@@ -53,86 +49,6 @@ def send_message_with_buttons(username, text, page=1):
         # Handle any other unexpected errors
         print(f"An unexpected error occurred while sending message to {username}: {e}")
         return {"error": f"Unexpected error: {e}"}
-    # """Send a paginated message with navigation buttons."""
-    # data = text['features']  # Extract the list of items
-    # total_items = len(data)
-
-    # print("PAGINATION: ", data)
-    # print('TOTAL ITEMS: ', total_items)
-    
-    # # Calculate total pages
-    # total_pages = (total_items // PAGE_SIZE) + (1 if total_items % PAGE_SIZE else 0)
-
-    # # Validate page number
-    # if page < 1:
-    #     page = 1
-    # elif page > total_pages:
-    #     page = total_pages
-
-    # # Slice data for the current page
-    # start_index = (page - 1) * PAGE_SIZE
-    # end_index = start_index + PAGE_SIZE
-    # page_data = data[start_index:end_index]
-
-    # # Format message content
-    # message_text = f"Page {page}/{total_pages}:\n"
-    # for i, item in enumerate(page_data, start=start_index + 1):
-    #     properties = item.get('properties', {})
-    #     name = properties.get('name', 'Unknown')
-    #     address = properties.get('formatted', 'No address available')
-    #     website = properties.get('website', 'No website listed')
-    #     phone = properties.get('contact', {}).get('phone', 'No phone number')
-
-    #     message_text += f"{i}. {name}\n    {address}\n    {website}\n    {phone}\n\n"
-
-    # # Add navigation buttons
-    # attachments = [{
-    #     "title": "Navigation",  # Required field
-    #     "button_alignment": "horizontal",  # Align buttons properly
-    #     "actions": []
-    # }]
-
-    # if page > 1:
-    #     print('add prev')
-    #     attachments[0]["actions"].append({
-    #         "type": "button",
-    #         "text": "⬅️ Previous",
-    #         "callback_id": f"prev_page:{page - 1}",
-    #         "msg_in_chat_window": True
-    #     })
-
-    # if page < total_pages:
-    #     print('add next')
-    #     attachments[0]["actions"].append({
-    #         "type": "button",
-    #         "text": "➡️ Next",
-    #         "callback_id": f"next_page:{page + 1}",
-    #         "msg_in_chat_window": True
-    #     })
-    # print('attachments: ', attachments)
-    # payload = {
-    #     "channel": f"@{username}",
-    #     "text": message_text,
-    #     "attachments": attachments,
-    #     "msg_in_chat_window": True
-    # }
-
-    # try:
-    #     response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-    #     response.raise_for_status()
-    #     user_pages[username] = page  # Store current page for the user
-    #     print(f"Page {page} sent to {username}.")
-    #     return response.json()
-    # except Exception as e:
-    #     print(f"Error sending message to {username}: {e}")
-    #     return {"error": str(e)}
-
-def handle_pagination(username, callback_data):
-    """Handle navigation callbacks."""
-    action, page = callback_data.split(":")
-    page = int(page)
-    send_message_with_buttons(username, text, page)
-
 
 def ask_for_friend_username(username):
     """Ask the user for their friend's username."""
@@ -170,18 +86,6 @@ def send_plan_to_friend(friend_username, username, plan_text):
     # """
     # Send the plan message to the friend.
     # """
-    # payload = {
-    #     "channel": f"@{friend_username}",
-    #     "text": plan_text
-    # }
-    # try:
-    #     response = requests.post(f"{ROCKETCHAT_URL}", json=payload, headers=HEADERS)
-    #     response.raise_for_status()
-    #     print(f"Plan sent successfully to {friend_username}.")
-    #     return response.json()
-    # except Exception as e:
-    #     print(f"Error sending plan to {friend_username}: {e}")
-    #     return {"error": str(e)}
     payload = {
         "channel": f"@{friend_username}",
         "text": plan_text,
@@ -654,13 +558,26 @@ def radius_command(user, message, sess_id):
             else:
                 print("Error calling Geoapify API")
 
+            system_message = (
+                """You are a friendly assistant that formats API responses as a catalog of choices.
+                Given a list of activities, output:
+                1. On the first line, only the number of items provided.
+                2. On the following lines, list each option on its own line prefixed with its number (starting at 1) and the details.
+                Do not include any extra commentary or headings."""
+            )
             response = generate(
                 model = '4o-mini',
-                system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
+                system = system_message,
                 query = (
-                    f'''The following list of activities was generated based on an API call: {api_result.json()}.
-                    For clarity and future reference, please present them as numbered options.
-                    In subsequent requests, refer to these numbers for any follow-up actions.'''
+                    f'''The following list of activities was generated from an API call: {api_result.json()}.
+                    Please format the output so that:
+                        - The first line is only the count of items in the list.
+                        - Immediately after a newline, list the options as numbered choices with all relevant details.
+                    Only include the options provided and nothing else.
+
+                    In subsequent requests, refer to these numbers for any follow-up actions.
+                    Right now, just show the first 4. Only show more when requested to. Do not
+                    restart the numbering if more are asked to be seen.'''
                 ),
                 temperature=0.3,
                 lastk=20,
@@ -712,6 +629,13 @@ def details_complete(response_text, user, sess_id, page=0):
     then stores and displays a limited subset of the results.
     """
     print("ALL NECESSARY DETAILS")
+
+    payload_initial = {
+        "channel": f"@{user}",
+        "text": "🔍 Gathering details... Hang tight while I process your request!"
+    }
+    requests.post(ROCKETCHAT_URL, json=payload_initial, headers=HEADERS)
+    
     try: 
         # Extract activity and location from the response
         activity = agent_activity(response_text)
@@ -768,11 +692,12 @@ def details_complete(response_text, user, sess_id, page=0):
 
             system_message = (
                 """Be friendly and give human readable text. Format the result of the API this so that it looks
-                as if they are catalog of choices. Remember the output of this query for future reference."""
+                as if they are catalog of choices. Include relevant details for users to make
+                 a choice on which place htey would like to choose. Remember the output of this query for future reference."""
             )
             response = generate(
                 model = '4o-mini',
-                system = 'Be friendly and give human readable text. Remember the output of this query for future reference.',
+                system = system_message,
                 query = (
                     f'''The following list of activities was generated based on an API call: {api_result.json()}.
                     For clarity and future reference, please present them as numbered options.
@@ -906,6 +831,7 @@ def main():
         "This is an ongoing conversation—do NOT restart it. Always remember what has already been discussed. "
         "If any of the required details (location, date, time, or activity) are missing, ask a clear and direct question to obtain them. "
         "Only when all details are provided, summarize the plan starting with: 'All necessary details completed:'. "
+        "Do not ask for clarification for information that you have already received."
         "Please use emojis where appropriate."
     )
 
