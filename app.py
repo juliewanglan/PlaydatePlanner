@@ -35,21 +35,11 @@ def send_message_with_buttons(parts, username, text):
     for idx in range(parts):
         actions.append({
             "type": "button",
-            "text": f"{idx}",
-            "msg": f"The chosen place is: {idx}",
+            "text": f"{idx + 1}",
+            "msg": f"{idx + 1}",
             "msg_in_chat_window": True,
             "style": "primary"
         })
-
-    # # Optionally, add a fallback if there are fewer than 4 options.
-    # if len(actions) < 4:
-    #     actions.append({
-    #         "type": "button",
-    #         "text": "More options",
-    #         "msg": "No more options available.",
-    #         "msg_in_chat_window": True,
-    #         "style": "default"
-    #     })
 
     payload = {
         "channel": f"@{username}",
@@ -346,6 +336,11 @@ def send_calendar_to_recipient(message, room_id):
                 print(f"Writing ICS content to file: {ics_filename}")
                 ics_content = ical_content.replace("\n", "\r\n")
                 ics_content = ics_content.strip()
+                
+                lines = ics_content.split("\r\n")
+                cleaned_lines = [line.rstrip() for line in lines]  # Remove trailing whitespace from each line
+                ics_content = "\r\n".join(cleaned_lines)
+
                 try:
                     with open(ics_filename, "w") as f:
                         f.write(ics_content)
@@ -433,6 +428,10 @@ def send_calendar_to_planner(message, room_id):
             print(f"Writing ICS content to file: {ics_filename}")
             ics_content = ical_content.replace("\n", "\r\n")
             ics_content = ics_content.strip()
+
+            lines = ics_content.split("\r\n")
+            cleaned_lines = [line.rstrip() for line in lines]  # Remove trailing whitespace from each line
+            ics_content = "\r\n".join(cleaned_lines)
 
             try:
                 with open(ics_filename, "w") as f:
@@ -596,7 +595,8 @@ def radius_command(user, message, sess_id):
                 Given a list of activities, output:
                 1. On the first line, only the number of items provided.
                 2. On the following lines, list each option on its own line prefixed with its number (starting at 1) and the details.
-                Do not include any extra commentary or headings."""
+                Do not include any extra commentary or headings.
+                Format everything nicely"""
             )
             response = generate(
                 model = '4o-mini',
@@ -606,7 +606,7 @@ def radius_command(user, message, sess_id):
                     Only print the first 4 to start (if there are 4).
                     Please format the output so that:
                         - The first line is only the count of items in the list (not the limit of the API call, but the amount received and printed).
-                        - Immediately after a newline, list the options as numbered choices with all relevant details.
+                        - Immediately after a newline, list the options as numbered choices with all relevant details and a description.
                     Only include the options provided and nothing else.
 
                     In subsequent requests, refer to these numbers for any follow-up actions.
@@ -741,7 +741,8 @@ def details_complete(room_id, response_text, user, sess_id, page=0):
                 Given a list of activities, output:
                 1. On the first line, only the number of items provided.
                 2. On the following lines, list each option on its own line prefixed with its number (starting at 1) and the details.
-                Do not include any extra commentary or headings."""
+                Do not include any extra commentary or headings.
+                Format everything nicely"""
             )
             response = generate(
                 model = '4o-mini',
@@ -751,7 +752,7 @@ def details_complete(room_id, response_text, user, sess_id, page=0):
                     Only print the first 4 to start (if there are 4).
                     Please format the output so that:
                         - The first line is only the count of items in the list (not the limit of the API call, but the amount received and printed).
-                        - Immediately after a newline, list the options as numbered choices with all relevant details.
+                        - Immediately after a newline, list the options as numbered choices with all relevant details and a description.
                     Only include the options provided and nothing else.
 
                     In subsequent requests, refer to these numbers for any follow-up actions.
@@ -1031,13 +1032,15 @@ def agent_detect_intent(query):
                 Any vague idea of an activity (e.g., restaurant) counts as an activity and
                 thus you can return '2'.
                 If the user is stating an activity and not asking for a recommendation, return '2'.
+                Be very sparing in returning '1', in most instances you will return '2'.
             """)
     intent_response = generate(
         model='4o-mini',
         system=(
             "You are an intent detection assistant. "
             "Analyze the following user message and return a single number: "
-            "return '1' if the user is asking for activity suggestions, and '2' otherwise."            
+            "return '1' if the user is asking for activity suggestions, and '2' otherwise." 
+            "Be very sparing in returning '1', in most instances you will return '2'"       
         ),
         query=query,
         temperature=0.0,
