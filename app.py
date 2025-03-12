@@ -725,6 +725,20 @@ def redo_command(user, message, sess_id):
 
     if command_type == "activity":
         print("Fetching a new activity...")
+
+        # response = generate(
+        #     model='4o-mini',
+        #     system='',
+        #     query= "The user's next message is going to ",
+        #     temperature=0.0,
+        #     lastk=20,
+        #     session_id=sess_id
+        # )
+        # print("*********QUERY FINISHED*********")
+        # response_text = response.get('response', '').strip()
+        # print("RESPONSE TEXT: ", response_text)
+        # print(sess_id)
+            
         return
         # payload = {
         #         "channel": f"@{confirmed_user}",
@@ -933,6 +947,7 @@ def main():
         "Only the time needs to be specific. The activity and location do not need to be. Do not prompt the user to make it more specific if they have already given the information."
         "For example, 'movie near Tufts at 7pm on Saturday' provides all necessary details."
         "Only when all details are provided, respond with exactly: 'All necessary details completed:' followed by a summary of the plan. "
+        "Always remember what has been dis"
         f"This is the user's next message: {message}"
     )
     system = (
