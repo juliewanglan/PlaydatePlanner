@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 
 app = Flask(__name__)
-session_id = "11havelaydatePlanner-"
+session_id = "12havelaydatePlanner-"
 
 # Rocket.Chat API endpoint
 API_BASE_URL = "https://chat.genaiconnect.net/api/v1"
@@ -205,7 +205,7 @@ def confirm_command(message, user, room_id):
             ask_for_friend_username(confirmed_user)
             payload_initial = {
                 "channel": f"@{user}",
-                "text": f"Waiting on {confirmed_user}'s response",
+                "text": f"Waiting on {confirmed_user}'s response 🕣",
             }
             requests.post(ROCKETCHAT_URL, json=payload_initial, headers=HEADERS)
             send_typing_indicator(room_id)
@@ -705,6 +705,7 @@ def show_more_options(user, sess_id):
     # parts = response_text.split()
     # responses_no = int(parts[0])
     lines = response_text.splitlines()
+    lines = [line.strip() for line in response_text.splitlines() if line.strip()]
     responses_no = int(lines[0].strip())
     options = []
     # Reassemble the output without the first line (the number and its newline)
