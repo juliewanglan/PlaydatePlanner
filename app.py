@@ -724,34 +724,8 @@ def redo_command(user, message, sess_id):
         return {"error": "Invalid command format. Use `!redo username radius` or `!redo username activity`"}
 
     if command_type == "activity":
-        print("Fetching a new activity...")
-
-        # response = generate(
-        #     model='4o-mini',
-        #     system='',
-        #     query= "The user's next message is going to ",
-        #     temperature=0.0,
-        #     lastk=20,
-        #     session_id=sess_id
-        # )
-        # print("*********QUERY FINISHED*********")
-        # response_text = response.get('response', '').strip()
-        # print("RESPONSE TEXT: ", response_text)
-        # print(sess_id)
-            
+        print("Fetching a new activity...")        
         return
-        # payload = {
-        #         "channel": f"@{confirmed_user}",
-        #         "text": f"Give a new activity"
-        # }
-        # try:
-        #     response = requests.post(ROCKETCHAT_URL, json=payload, headers=HEADERS)
-        #     response.raise_for_status()
-
-        #     return response.json()
-        # except Exception as e:
-        #     print(f"An error occurred stating the confirmation: {e}")
-        #     return {"error": f"Error: {e}"}
     
     else:
         return {"error": "Invalid option. Use `radius` to expand the search or `activity` to try a new one."}
