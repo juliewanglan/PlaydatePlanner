@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 
 app = Flask(__name__)
-session_id = "12havelaydatePlanner-"
+session_id = "13havelaydatePlanner-"
 
 # Rocket.Chat API endpoint
 API_BASE_URL = "https://chat.genaiconnect.net/api/v1"
@@ -926,6 +926,7 @@ def main():
         "If the user inputs information that they have already given (changed their mind), rewrite over the previous information for that specific detail"
         "Do not ask for clarification for information that you have already received."
         "Only the time needs to be specific. The activity and location do not need to be. Do not prompt the user to make it more specific if they have already given the information."
+        "For example, 'movie near Tufts at 7pm on Saturday' provides all necessary details."
         "Only when all details are provided, respond with exactly: 'All necessary details completed:' followed by a summary of the plan. "
         f"This is the user's next message: {message}"
     )
@@ -936,6 +937,8 @@ def main():
         "Only when all details are provided, summarize the plan starting with: 'All necessary details completed:'. "
         "Do not ask for clarification for information that you have already received."
         "Please use emojis where appropriate."
+        "Only the time needs to be specific. The activity and location do not need to be. Do not prompt the user to make it more specific if they have already given the information."
+
     )
 
     print("*********ABOUT TO START QUERY*********")
