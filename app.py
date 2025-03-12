@@ -928,7 +928,7 @@ def main():
         "Your goal is to obtain all of the following details from the user: location (city), date, time (specific), and activity. "
         "If any one of these details is missing, ask a clear and direct question for that specific missing detail. "
         "Do not produce a final summary until you have all the required details. "
-        "If the user inputs information that they have already given (changed their mind), rewrite over the previous information for that specific detail"
+        "If the user inputs information that they have already given (changed their mind), rewrite over the previous information for that specific detail, but remember the other detials."
         "Do not ask for clarification for information that you have already received."
         "Only the time needs to be specific. The activity and location do not need to be. Do not prompt the user to make it more specific if they have already given the information."
         "For example, 'movie near Tufts at 7pm on Saturday' provides all necessary details."
