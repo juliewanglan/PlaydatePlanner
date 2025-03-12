@@ -647,6 +647,7 @@ def format_api(sess_id, api_result, user):
     # parts = response_text.split()
     # responses_no = int(parts[0])
     lines = response_text.splitlines()
+    lines = [line.strip() for line in response_text.splitlines() if line.strip()]
     print('LINES:', lines)
     responses_no = int(lines[0].strip())
     options = []
@@ -1052,7 +1053,7 @@ def agent_detect_intent(query):
     "2": all other messages
     '''
     query = (f"""
-                You are an intent detection assistant. Analyze the following message: {query}.
+                You are determining whether the user needs an activity recommendation. Analyze the following message: {query}.
                 Respond with a single number and just a single number. Respond with '1'
                 if the user is asking for suggestions for an activity or is not sure 
                 what to do as an activity. Otherwise, return '2'.
@@ -1060,7 +1061,7 @@ def agent_detect_intent(query):
                 thus you can return '2'.
                 If the user is stating an activity and not asking for a recommendation, return '2'.
                 Be very sparing in returning '1', in most instances you will return '2'.
-                Only if the user asks for a suggestion should you return '2'.
+                Only if the user asks for a suggestion or says they are not sure should you return '2'.
             """)
     intent_response = generate(
         model='4o-mini',
