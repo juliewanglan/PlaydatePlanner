@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 
 app = Flask(__name__)
-session_id = "10havelaydatePlanner-"
+session_id = "11havelaydatePlanner-"
 
 # Rocket.Chat API endpoint
 API_BASE_URL = "https://chat.genaiconnect.net/api/v1"
@@ -27,11 +27,12 @@ upload_headers = {
     "X-User-Id": os.environ.get("RC_userId") #Replace with your bot user id for local testing or keep it and store secrets in Koyeb
 }
 
-def send_message_with_buttons(parts, options, username, text):
-    """Send a message with Yes/No buttons for plan confirmation."""
+def send_place_options(parts, options, username, text):
+    """Send a message with the place options as buttons."""
     print(options)
     actions = []
     for idx, name in enumerate(options):
+        print('IN THE FOR LOOPS FOR OPTIONS')
         actions.append({
             "type": "button",
             "text": name,
@@ -656,7 +657,7 @@ def format_api(sess_id, api_result, user):
     print('LIST OF PLACES GENERATED')
     print(response_text)
 
-    rocketchat_response = send_message_with_buttons(parts=responses_no, options=options, username=user, text=response_text)
+    rocketchat_response = send_place_options(parts=responses_no, options=options, username=user, text=response_text)
     return jsonify({"status": "redo_search"})
 
 def show_more_options(user, sess_id):
@@ -705,7 +706,7 @@ def show_more_options(user, sess_id):
     print('LIST OF PLACES GENERATED')
     print(response_text)
 
-    rocketchat_response = send_message_with_buttons(parts=0, options=options, username=user, text=response_text)
+    rocketchat_response = send_place_options(parts=0, options=options, username=user, text=response_text)
     return jsonify({"status": "more_options_shown"})
 
 
