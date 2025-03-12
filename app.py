@@ -31,7 +31,7 @@ def send_place_options(parts, options, username, text):
     """Send a message with the place options as buttons."""
     print(options)
     actions = []
-    for idx, name in enumerate(options):
+    for name in options:
         print('IN THE FOR LOOPS FOR OPTIONS')
         actions.append({
             "type": "button",
@@ -646,10 +646,12 @@ def format_api(sess_id, api_result, user):
     # parts = response_text.split()
     # responses_no = int(parts[0])
     lines = response_text.splitlines()
+    print('LINES:', lines)
     responses_no = int(lines[0].strip())
     options = []
     # Reassemble the output without the first line (the number and its newline)
     if len(lines) > 1:
+        print('IN LINES IF STATEMENT')
         options = [opt.strip() for opt in lines[1].split(',')]
         response_text = "\n".join(lines[2:])
     else:
