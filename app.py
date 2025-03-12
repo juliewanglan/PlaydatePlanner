@@ -947,7 +947,7 @@ def main():
         "Only the time needs to be specific. The activity and location do not need to be. Do not prompt the user to make it more specific if they have already given the information."
         "For example, 'movie near Tufts at 7pm on Saturday' provides all necessary details."
         "Only when all details are provided, respond with exactly: 'All necessary details completed:' followed by a summary of the plan. "
-        "Always remember what has been dis"
+        "Always remember what has been discussed, to revisit later or in case user changes activity."
         f"This is the user's next message: {message}"
     )
     system = (
