@@ -205,7 +205,7 @@ def confirm_command(message, user, room_id):
             ask_for_friend_username(confirmed_user)
             payload_initial = {
                 "channel": f"@{user}",
-                "text": "🔍 Gathering details... Hang tight while I process your request!",
+                "text": f"Waiting on {confirmed_user}'s response",
             }
             requests.post(ROCKETCHAT_URL, json=payload_initial, headers=HEADERS)
             send_typing_indicator(room_id)
