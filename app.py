@@ -194,7 +194,7 @@ def send_activity_suggestions(user):
         print(f"Error sending activity suggestions: {e}")
         return {"error": f"Unexpected error: {e}"}
 
-def confirm_command(message):
+def confirm_command(message, user, room_id):
     parts = message.split()
     if len(parts) >= 3:
         confirmed_user = parts[1]
@@ -203,6 +203,12 @@ def confirm_command(message):
         if confirmation == "yes":
             # Ask for the friend's username
             ask_for_friend_username(confirmed_user)
+            payload_initial = {
+                "channel": f"@{user}",
+                "text": "🔍 Gathering details... Hang tight while I process your request!",
+            }
+            requests.post(ROCKETCHAT_URL, json=payload_initial, headers=HEADERS)
+            send_typing_indicator(room_id)
             return jsonify({"status": "asked_for_friend_username"})
         elif confirmation == "no":
             payload = {
@@ -862,7 +868,7 @@ def main():
     # Check if the message is a confirmation response
     if message.startswith("!confirm"):
         print("========CONFIRM_COMMAND START========")
-        confirm_command(message)
+        confirm_command(message, user, room_id)
         print("========CONFIRM_COMMAND DONE========")
         return jsonify({"status": "valid_confirmation"})
     
