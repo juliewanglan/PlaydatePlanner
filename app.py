@@ -617,7 +617,7 @@ def format_api(sess_id, api_result, user):
         2. On the second line, only list the names of the options you are presenting, separated by commas.
         3. On the following lines, list each option on its own line and the details.
         Do not include any extra commentary or headings.
-        Make sure to delimit each line with a newline.
+        Make sure to delimit each line with a single (one) newline. Do not add additional unnecessary newline characters.
         Format everything nicely"""
     )
     response = generate(
@@ -631,7 +631,7 @@ def format_api(sess_id, api_result, user):
                 - Immediately after a new line, the second line should include the names of the options that are being displayed to the user (such an first four), each seperated with a comma. No other information on this line.
                 - Immediately after a newline, starting on the third line, list the options with all relevant details and a description.
             Only include the options provided and nothing else.
-            Make sure to delimit each line with a newline.
+            Make sure to delimit each line with a single (one) newline. Do not add additional unnecessary newline characters.
             In subsequent requests, refer to these items for any follow-up actions.
             Right now, just show the first 4. Only show more when requested to.'''
         ),
