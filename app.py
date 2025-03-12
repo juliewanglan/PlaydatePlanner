@@ -44,7 +44,7 @@ def send_place_options(parts, options, username, text):
     if parts > 4:
         actions.append({
             "type": "button",
-            "text": "See more options",
+            "text": "🔽 See more options",
             "msg": f"!more options",
             "msg_in_chat_window": True,
             "style": "primary"
@@ -488,7 +488,7 @@ def send_calendar_to_planner(message, room_id):
                         "actions": [
                             {
                                 "type": "button",
-                                "text": "Add to calendar📅",
+                                "text": "📅 Add to calendar",
                                 "msg": f"!calendar {confirmed_user} {confirmed_friend} yes",
                                 "msg_in_chat_window": True
                             },
@@ -648,14 +648,14 @@ def format_api(sess_id, api_result, user):
     # parts = response_text.split()
     # responses_no = int(parts[0])
     lines = response_text.splitlines()
-    lines = [line.strip() for line in response_text.splitlines() if line.strip()]
+    clean_lines = [line.strip() for line in response_text.splitlines() if line.strip()]
     print('LINES:', lines)
     responses_no = int(lines[0].strip())
     options = []
     # Reassemble the output without the first line (the number and its newline)
     if len(lines) > 1:
         print('IN LINES IF STATEMENT')
-        options = [opt.strip() for opt in lines[1].split(',')]
+        options = [opt.strip() for opt in clean_lines[1].split(',')]
         response_text = "\n".join(lines[2:])
     else:
         response_text = ""
@@ -700,12 +700,12 @@ def show_more_options(user, sess_id):
     # parts = response_text.split()
     # responses_no = int(parts[0])
     lines = response_text.splitlines()
-    lines = [line.strip() for line in response_text.splitlines() if line.strip()]
+    clean_lines = [line.strip() for line in response_text.splitlines() if line.strip()]
     responses_no = int(lines[0].strip())
     options = []
     # Reassemble the output without the first line (the number and its newline)
     if len(lines) > 1:
-        options = [opt.strip() for opt in lines[1].split(',')]
+        options = [opt.strip() for opt in clean_lines[1].split(',')]
         response_text = "\n".join(lines[2:])
     else:
         response_text = ""
@@ -855,7 +855,7 @@ def main():
     if (len(message.split()) == 1) and is_valid_username(message.split()[0]):
         payload_initial = {
             "channel": f"@{user}",
-            "text": f"Waiting on {message.split()[0]}'s response 🕣",
+            "text": f"🕣 Waiting on {message.split()[0]}'s response",
         }
         requests.post(ROCKETCHAT_URL, json=payload_initial, headers=HEADERS)
         print("========REGENERATE_SUMMARY START========")
@@ -904,6 +904,11 @@ def main():
 
     if message.startswith("!radius"): 
         print("========REDO COMMAND START========")
+        payload_initial = {
+        "channel": f"@{user}",
+        "text": "🔍 Gathering details... Hang tight while I process your request!",
+        }
+        requests.post(ROCKETCHAT_URL, json=payload_initial, headers=HEADERS)
         radius_command(user, message, sess_id)
         return jsonify({"status": "larger_radius_search"})
         print("========REDO COMMAND DONE========")
@@ -920,7 +925,7 @@ def main():
 
     query = (
         "You are an aide to make hangout plans, a friendly assistant helping users plan a hangout. "
-        "Your goal is to obtain all of the following details from the user: location, date, time (specific), and activity. "
+        "Your goal is to obtain all of the following details from the user: location (city), date, time (specific), and activity. "
         "If any one of these details is missing, ask a clear and direct question for that specific missing detail. "
         "Do not produce a final summary until you have all the required details. "
         "If the user inputs information that they have already given (changed their mind), rewrite over the previous information for that specific detail"
@@ -1072,6 +1077,8 @@ def agent_detect_intent(query):
                 If the user is stating an activity and not asking for a recommendation, return '2'.
                 Be very sparing in returning '1', in most instances you will return '2'.
                 Only if the user asks for a suggestion or says they are not sure should you return '2'.
+                If it seems like confusion about location or time specifically, respond with 2. For example 'near Tufts'
+                should return 2.
             """)
     intent_response = generate(
         model='4o-mini',
