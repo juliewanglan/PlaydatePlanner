@@ -13,7 +13,7 @@ session_id = "10havelaydatePlanner-"
 
 # Rocket.Chat API endpoint
 API_BASE_URL = "https://chat.genaiconnect.net/api/v1"
-ROCKETCHAT_URL = "https://chat.genaiconnect.net/api/v1/chat.postMessage"  # Keep the same URL
+ROCKETCHAT_URL = "https://chat.genaiconnect.net/api/v1/chat.postMessage"
 
 # Headers with authentication tokens stored securely in environment variables
 HEADERS = {
@@ -31,8 +31,6 @@ def send_message_with_buttons(parts, options, username, text):
     """Send a message with Yes/No buttons for plan confirmation."""
     print(options)
     actions = []
-    # Dynamically create a button for each available response.
-    # If you need a minimum of 4 buttons, you can add a fallback button.
     for idx, name in enumerate(options):
         actions.append({
             "type": "button",
@@ -872,6 +870,7 @@ def main():
     if message.startswith("!more options"):
         print("======== START========")
         show_more_options(user=user, sess_id=sess_id)
+        return jsonify({"status": "more_options"})
         print("======== DONE========")
 
     if message.startswith("!calendar"):
