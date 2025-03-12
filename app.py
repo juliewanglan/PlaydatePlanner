@@ -203,11 +203,6 @@ def confirm_command(message, user, room_id):
         if confirmation == "yes":
             # Ask for the friend's username
             ask_for_friend_username(confirmed_user)
-            payload_initial = {
-                "channel": f"@{user}",
-                "text": f"Waiting on {confirmed_user}'s response 🕣",
-            }
-            requests.post(ROCKETCHAT_URL, json=payload_initial, headers=HEADERS)
             send_typing_indicator(room_id)
             return jsonify({"status": "asked_for_friend_username"})
         elif confirmation == "no":
@@ -858,6 +853,11 @@ def main():
     print(message.split())
     
     if (len(message.split()) == 1) and is_valid_username(message.split()[0]):
+        payload_initial = {
+            "channel": f"@{user}",
+            "text": f"Waiting on {message.split()[0]}'s response 🕣",
+        }
+        requests.post(ROCKETCHAT_URL, json=payload_initial, headers=HEADERS)
         print("========REGENERATE_SUMMARY START========")
         plan_text = regenerate_summary(sess_id)
         print("========REGENERATE_SUMMARY DONE========")
